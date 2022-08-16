@@ -1,6 +1,10 @@
 pub mod entities;
 pub(crate) mod utils;
-pub mod parser;
+pub mod to_machine;
+pub mod to_ticket;
+pub mod enums;
+pub mod to;
+pub mod db;
 
 #[cfg(test)]
 mod tests {

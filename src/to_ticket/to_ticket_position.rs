@@ -10,7 +10,7 @@ pub struct ToTicketInTextPosition {
 }
 
 impl ToTicketInTextPosition {
-    pub(crate) fn from_match(m: &Captures, line: usize) -> Self {
+    pub fn from_match(m: &Captures, line: usize) -> Self {
         ToTicketInTextPosition {
             line,
             column: m.get(0).unwrap().start(),
