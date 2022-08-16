@@ -1,4 +1,4 @@
-use regex::{Captures, escape, Match, Regex};
+use regex::{escape, Regex};
 use crate::to_ticket::to_ticket_position::ToTicketInTextPosition;
 use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
 use crate::to_ticket::parser::parser_option::ParserOption;
