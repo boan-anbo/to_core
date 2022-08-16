@@ -1,4 +1,6 @@
+use serde::{Deserialize, Serialize};
 
+#[derive(Deserialize, Serialize)]
 pub struct ToMarker {
     pub left_marker: String,
     pub right_marker: String,
