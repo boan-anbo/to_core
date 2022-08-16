@@ -1,4 +1,4 @@
-use crate::entities::to_marker::ToMarker;
+use crate::to_ticket::to_ticket_marker::ToMarker;
 
 pub struct ParserOption {
     pub to_marker: ToMarker,

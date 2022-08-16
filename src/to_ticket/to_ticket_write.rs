@@ -1,5 +1,5 @@
-use crate::entities::to_ticket::TextualObjectTicket;
-use crate::entities::to_ticket_option::ToTicketPrintOption;
+use crate::to_ticket::to_ticket_option::ToTicketPrintOption;
+use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
 
 // writer methods
 impl TextualObjectTicket {
@@ -58,7 +58,7 @@ impl TextualObjectTicket {
 #[cfg(test)]
 mod tests {
     use chrono::{FixedOffset, TimeZone, Utc};
-    use crate::entities::to_ticket::TextualObjectTicket;
+    use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
 
     #[test]
     fn test_print_ticket_empty() {

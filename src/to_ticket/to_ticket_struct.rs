@@ -1,12 +1,10 @@
 use std::ops::Add;
-use crate::utils::generate_id;
 use chrono::{DateTime, FixedOffset, Local, NaiveDateTime, Utc};
 use indexmap::IndexMap;
-use crate::entities::to_marker::ToMarker;
-use crate::entities::to_ticket_option::ToTicketPrintOption;
-use crate::entities::to_ticket_position::ToTicketInTextPosition;
-use crate::parser::parser_option::ParserOption;
 use serde::{Deserialize, Serialize};
+use crate::to_ticket::to_ticket_marker::ToMarker;
+use crate::to_ticket::to_ticket_position::ToTicketInTextPosition;
+use crate::utils::generate_id;
 
 
 #[derive(Serialize, Deserialize)]
@@ -34,7 +32,7 @@ pub struct TextualObjectTicket {
     Private meta-data, not be printed
      */
     #[serde(default)]
-    pub(crate) to_marker: ToMarker,
+    pub to_marker: ToMarker,
     #[serde(default)]
     pub to_intext_option: Option<ToTicketInTextPosition>,
 
