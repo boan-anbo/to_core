@@ -12,7 +12,7 @@ impl TextualObjectTicket {
 
 
         // split strings with separator for once
-        let mut split_content = clean_content.split(&opt.to_marker.value_entry_separator);
+        let split_content = clean_content.split(&opt.to_marker.value_entry_separator);
         // iterate through the split strings
         let mut to_ticket = TextualObjectTicket::default();
         // load position if exists

@@ -1,10 +1,10 @@
-use std::ops::Add;
-use chrono::{DateTime, FixedOffset, Local, NaiveDateTime, Utc};
+
+use chrono::{DateTime, FixedOffset, Local};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use crate::to_ticket::to_ticket_marker::ToMarker;
 use crate::to_ticket::to_ticket_position::ToTicketInTextPosition;
-use crate::utils::generate_id;
+use crate::utils::id_generator::generate_id;
 
 
 #[derive(Serialize, Deserialize)]
@@ -60,13 +60,13 @@ impl Default for TextualObjectTicket {
 // test create default TextualObjectTicket
 #[cfg(test)]
 mod tests {
-    use chrono::{Datelike, TimeZone};
+    use chrono::{Datelike, Utc};
     use super::*;
 
     #[test]
     fn test_create_ticket() {
         let ticket = TextualObjectTicket::default();
-        assert_eq!(ticket.id.len(), 7);
+        assert_eq!(ticket.id.len(), 5);
         assert_eq!(ticket.values.len(), 0);
         assert_eq!(ticket.to_updated.num_days_from_ce(), Utc::now().num_days_from_ce());
         assert_eq!(ticket.to_store_id, None);

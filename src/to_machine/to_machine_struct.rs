@@ -48,7 +48,7 @@ impl TextualObjectMachineRs {
 // tests for TextualObjectMachineRs
 #[cfg(test)]
 mod tests {
-    use std::ffi::OsString;
+    
     use std::path::PathBuf;
     use crate::enums::store_type::StoreType;
     use crate::to_machine::to_machine_struct::TextualObjectMachineRs;
@@ -71,7 +71,7 @@ mod tests {
 
         let non_existent_json_file = get_test_asset_path("non_existent_json_file.json");
         // create a new TextualObjectMachineRs with JSON store
-        let machine = TextualObjectMachineRs::new(&non_existent_json_file, StoreType::JSON);
+        let _machine = TextualObjectMachineRs::new(&non_existent_json_file, StoreType::JSON);
     }
 
     // test new() with existent json
