@@ -1,10 +1,10 @@
 use chrono::{DateTime, FixedOffset, NaiveDateTime};
 use crate::entities::to_ticket::TextualObjectTicket;
+use crate::entities::to_ticket_position::ToTicketInTextPosition;
 use crate::parser::parser_option::ParserOption;
 
 impl TextualObjectTicket {
-
-    pub fn parse(mark_content: &str, opt: &ParserOption) -> Self {
+    pub fn parse(mark_content: &str, opt: &ParserOption, intext_position: Option<ToTicketInTextPosition>) -> Self {
 
         // remove left and right markers if they exist
         let mut clean_content = mark_content.replace(&opt.to_marker.left_marker, "");
@@ -15,6 +15,8 @@ impl TextualObjectTicket {
         let mut split_content = clean_content.split(&opt.to_marker.value_entry_separator);
         // iterate through the split strings
         let mut to_ticket = TextualObjectTicket::default();
+        // load position if exists
+        to_ticket.to_intext_option = intext_position;
         for content in split_content {
             // split the string with separator for once, ignoring the value separator if it comes after the key separator
             let mut split_content = content.splitn(2, &opt.to_marker.value_separator);
@@ -57,6 +59,11 @@ impl TextualObjectTicket {
         }
         to_ticket
     }
+
+
+    fn from_json(json: &str) -> Self {
+        serde_json::from_str(json).unwrap()
+    }
 }
 
 
@@ -74,7 +81,7 @@ Parser tests
     fn test_parse() {
         let mark_content = "key1:value1|key2:value2";
         let p1 = ParserOption::default();
-        let to_ticket = TextualObjectTicket::parse(mark_content, &p1);
+        let to_ticket = TextualObjectTicket::parse(mark_content, &p1, None);
         assert_eq!(to_ticket.values.len(), 2);
         assert_eq!(to_ticket.values.get("key1").unwrap(), "value1");
         assert_eq!(to_ticket.values.get("key2").unwrap(), "value2");
@@ -84,7 +91,7 @@ Parser tests
     fn test_parse_string_with_markers() {
         let opt = ParserOption::default();
         let mark_content = format!("{}key1:value1|key2:value2{}", opt.to_marker.left_marker, opt.to_marker.right_marker);
-        let to_ticket = TextualObjectTicket::parse(&mark_content, &opt);
+        let to_ticket = TextualObjectTicket::parse(&mark_content, &opt, None);
         assert_eq!(to_ticket.values.len(), 2);
         assert_eq!(to_ticket.values.get("key1").unwrap(), "value1");
         assert_eq!(to_ticket.values.get("key2").unwrap(), "value2");
@@ -96,7 +103,7 @@ Parser tests
     fn test_parse_with_meta_data() {
         let opt = ParserOption::default();
         let mark_content = format!("{}id:test_id|key1:value1|key2:value2|updated:2018-01-01 00:00:00|store_info:store_info|store_id:store_id{}", opt.to_marker.left_marker, opt.to_marker.right_marker);
-        let to_ticket = TextualObjectTicket::parse(&mark_content, &opt);
+        let to_ticket = TextualObjectTicket::parse(&mark_content, &opt, None);
         assert_eq!(to_ticket.id, "test_id".to_string());
         assert_eq!(to_ticket.values.len(), 2);
         assert_eq!(to_ticket.values.get("key1").unwrap(), "value1");
@@ -110,13 +117,36 @@ Parser tests
     fn test_parse_with_missing_values() {
         let opt = ParserOption::default();
         let mark_content = format!("{}id:test_id|key1:|key2|:value1|updated:2018-01-01 00:00:00|store_info:store_info{}", opt.to_marker.left_marker, opt.to_marker.right_marker);
-        let to_ticket = TextualObjectTicket::parse(&mark_content, &opt);
+        let to_ticket = TextualObjectTicket::parse(&mark_content, &opt, None);
         assert_eq!(to_ticket.id, "test_id".to_string());
         assert_eq!(to_ticket.values.len(), 3);
         assert_eq!(to_ticket.values.get("key1").unwrap(), "");
         assert_eq!(to_ticket.values.get("key2").unwrap(), "");
         assert_eq!(to_ticket.to_updated.num_days_from_ce(), Utc.ymd(2018, 1, 1).num_days_from_ce());
         assert_eq!(to_ticket.to_store_id, None);
+        assert_eq!(to_ticket.to_store_info, Some("store_info".to_string()));
+    }
+
+    // test reading from json
+    #[test]
+    fn test_from_json() {
+        let json = r#"{
+            "id": "test_id",
+            "to_updated": "2018-01-01T19:20:30.45+01:00",
+            "to_store_id": "store_id",
+            "to_store_info": "store_info",
+            "values": [
+                ["key1", "value1"],
+                ["key2", "value2"]
+            ]
+        }"#;
+        let to_ticket = TextualObjectTicket::from_json(json);
+        assert_eq!(to_ticket.id, "test_id".to_string());
+        assert_eq!(to_ticket.values.len(), 2);
+        assert_eq!(to_ticket.values.get("key1").unwrap(), "value1");
+        assert_eq!(to_ticket.values.get("key2").unwrap(), "value2");
+        assert_eq!(to_ticket.to_updated.num_days_from_ce(), Utc.ymd(2018, 1, 1).num_days_from_ce());
+        assert_eq!(to_ticket.to_store_id, Some("store_id".to_string()));
         assert_eq!(to_ticket.to_store_info, Some("store_info".to_string()));
     }
 }
