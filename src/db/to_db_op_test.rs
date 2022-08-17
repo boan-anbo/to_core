@@ -101,7 +101,6 @@ mod test {
         assert_eq!(json_read["array_key"], json_insert["array_key"]);
         assert_eq!(json_read["number_key"], json_insert["number_key"]);
         assert_eq!(json_read["boolean_key"], json_insert["boolean_key"]);
-
     }
 
 
@@ -131,8 +130,7 @@ mod test {
             json: sqlx::types::Json(Value::Null),
         };
         let received_id = insert_to(&pool, &to_insert).await;
-        let received_id_uuid = Uuid::parse_str(&received_id).unwrap();
-        assert_eq!(received_id, received_id_uuid.to_string());
+        assert_eq!(received_id, to_insert_uuid);
         let found_to = find_to_by_id(&pool, &to_insert_uuid).await;
         assert!(found_to.is_some());
         assert_eq!(found_to.unwrap().id, to_insert_uuid);
@@ -164,8 +162,7 @@ mod test {
             json: sqlx::types::Json(Value::Null),
         };
         let received_id = insert_to(&pool, &to_insert).await;
-        let received_id_uuid = Uuid::parse_str(&received_id).unwrap();
-        assert_eq!(received_id, received_id_uuid.to_string());
+        assert_eq!(received_id, to_insert.id);
         let found_to = find_to_by_ticket_id(&pool, &ticket_id).await;
         assert!(found_to.is_some());
         assert_eq!(found_to.unwrap().ticket_id,ticket_id);

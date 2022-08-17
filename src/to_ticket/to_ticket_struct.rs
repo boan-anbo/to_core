@@ -23,7 +23,7 @@ pub struct TextualObjectTicket {
     pub to_updated: DateTime<FixedOffset>,
     // redable notes on storage location of the referenced TO
     #[serde(default)]
-    pub to_store_id: Option<String>,
+    pub to_store_url: Option<String>,
     // Optional unique ID of the storage field
     #[serde(default)]
     pub to_store_info: Option<String>,
@@ -45,7 +45,7 @@ impl Default for TextualObjectTicket {
             id: generate_id(),
             values: IndexMap::new(),
             to_updated: Local::now().with_timezone(&FixedOffset::east(0)),
-            to_store_id: None,
+            to_store_url: None,
             to_store_info: None,
             to_marker: ToMarker::default(),
             to_intext_option: None,
@@ -69,7 +69,7 @@ mod tests {
         assert_eq!(ticket.id.len(), 5);
         assert_eq!(ticket.values.len(), 0);
         assert_eq!(ticket.to_updated.num_days_from_ce(), Utc::now().num_days_from_ce());
-        assert_eq!(ticket.to_store_id, None);
+        assert_eq!(ticket.to_store_url, None);
         assert_eq!(ticket.to_store_info, None);
         assert!(ticket.to_marker.left_marker.len() > 0);
     }

@@ -29,8 +29,8 @@ impl TextualObjectTicket {
             print_label.push(format!("updated: {}", self.to_updated.format("%Y-%m-%d %H:%M:%S")));
         }
         // check opt to see if include_store_info, length of store_id is not None, and length of store_id is not 0
-        if opt.include_store_info && self.to_store_id.is_some() && self.to_store_id.as_ref().unwrap().len() > 0 {
-            print_label.push(format!("store_info: {}", self.to_store_id.clone().unwrap()));
+        if opt.include_store_info && self.to_store_url.is_some() && self.to_store_url.as_ref().unwrap().len() > 0 {
+            print_label.push(format!("store_info: {}", self.to_store_url.clone().unwrap()));
         }
         // check opt to see if include_store_id, length of store_id is not None, and length of store_id is not 0
         if opt.include_store_id && self.to_store_info.is_some() && self.to_store_info.as_ref().unwrap().len() > 0 {
@@ -87,7 +87,7 @@ mod tests {
         ticket.values.insert("key1".to_string(), "value1".to_string());
         ticket.values.insert("key2".to_string(), "value2".to_string());
         ticket.to_updated = FixedOffset::east(0).ymd(2019, 1, 1).and_hms(0, 0, 0);
-        ticket.to_store_id = Some("store_info_value".to_string());
+        ticket.to_store_url = Some("store_info_value".to_string());
         ticket.to_store_info = Some("store_id_value".to_string());
         let print_label = ticket.print(None);
         assert_eq!(print_label, format!("[[id: test_id | key1: value1 | key2: value2 | updated: 2019-01-01 00:00:00 | store_info: store_info_value | store_id: store_id_value]]"));
@@ -101,7 +101,7 @@ mod tests {
         ticket.values.insert("key1".to_string(), "value1".to_string());
         ticket.values.insert("key2".to_string(), "value2".to_string());
         ticket.to_updated = FixedOffset::east(0).ymd(2019, 1, 1).and_hms(0, 0, 0);
-        ticket.to_store_id = Some("correct_store_info_value".to_string());
+        ticket.to_store_url = Some("correct_store_info_value".to_string());
         ticket.to_store_info = Some("correct_store_info_value".to_string());
         ticket.values.insert("to_store_id".to_string(), "wrong_store_id_value".to_string());
         ticket.values.insert("to_store_info".to_string(), "wrong_store_info_value".to_string());
