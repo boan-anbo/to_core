@@ -46,7 +46,7 @@ impl TextualObjectTicket {
                     to_ticket.to_updated = DateTime::<FixedOffset>::from_utc(naive_updated, FixedOffset::east(0));
                 }
                 "store_id" => {
-                    to_ticket.to_store_id = Some(value);
+                    to_ticket.to_store_url = Some(value);
                 }
                 "store_info" => {
                     to_ticket.to_store_info = Some(value);
@@ -109,7 +109,7 @@ Parser tests
         assert_eq!(to_ticket.values.get("key1").unwrap(), "value1");
         assert_eq!(to_ticket.values.get("key2").unwrap(), "value2");
         assert_eq!(to_ticket.to_updated.num_days_from_ce(), Utc.ymd(2018, 1, 1).num_days_from_ce());
-        assert_eq!(to_ticket.to_store_id, Some("store_id".to_string()));
+        assert_eq!(to_ticket.to_store_url, Some("store_id".to_string()));
         assert_eq!(to_ticket.to_store_info, Some("store_info".to_string()));
     }
 
@@ -123,7 +123,7 @@ Parser tests
         assert_eq!(to_ticket.values.get("key1").unwrap(), "");
         assert_eq!(to_ticket.values.get("key2").unwrap(), "");
         assert_eq!(to_ticket.to_updated.num_days_from_ce(), Utc.ymd(2018, 1, 1).num_days_from_ce());
-        assert_eq!(to_ticket.to_store_id, None);
+        assert_eq!(to_ticket.to_store_url, None);
         assert_eq!(to_ticket.to_store_info, Some("store_info".to_string()));
     }
 
@@ -146,7 +146,7 @@ Parser tests
         assert_eq!(to_ticket.values.get("key1").unwrap(), "value1");
         assert_eq!(to_ticket.values.get("key2").unwrap(), "value2");
         assert_eq!(to_ticket.to_updated.num_days_from_ce(), Utc.ymd(2018, 1, 1).num_days_from_ce());
-        assert_eq!(to_ticket.to_store_id, Some("store_id".to_string()));
+        assert_eq!(to_ticket.to_store_url, Some("store_id".to_string()));
         assert_eq!(to_ticket.to_store_info, Some("store_info".to_string()));
     }
 }

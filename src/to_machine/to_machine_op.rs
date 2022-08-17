@@ -1,0 +1,176 @@
+// implement data operation methods for TextualObjectMachine
+
+use uuid::Uuid;
+use crate::db::to_db_op::{count_textual_objects, delete_to_by_ticket_id, find_to_by_ticket_id, insert_to};
+use crate::enums::store_type::StoreType;
+use crate::to::textual_object::TextualObject;
+use crate::to_machine::to_machine_struct::TextualObjectMachine;
+
+impl TextualObjectMachine {
+    pub async fn update_to_count(&mut self) -> i64 {
+        let pool = self.get_pool().await;
+        self.to_count = count_textual_objects(&pool).await;
+        self.to_count
+    }
+
+    pub async fn add_textual_object(&mut self, textual_object: &TextualObject) -> Uuid {
+        let pool = self.get_pool().await;
+        let id = insert_to(&pool, textual_object).await;
+        // update to_count
+        self.update_to_count().await;
+        id
+    }
+
+    // find by ticket id
+    pub async fn find(&mut self, ticket_id: &str) -> Option<TextualObject> {
+        let found_to = find_to_by_ticket_id(&self.get_pool().await, ticket_id).await;
+        found_to
+    }
+
+    // find all by ticket ids
+    pub async fn find_all(&mut self, ticket_ids: &Vec<&str>) -> Vec<TextualObject> {
+        // use find method to get all tos
+        let mut found_tos = Vec::new();
+        for ticket_id in ticket_ids {
+            let found_to = self.find(ticket_id).await;
+            match found_to {
+                Some(found_to) => {
+                    found_tos.push(found_to);
+                }
+                None => {
+                    // do nothing
+                }
+            }
+        }
+        found_tos
+    }
+
+    // delete by ticket id, return true if successful
+    pub async fn delete(&mut self, ticket_id: &String) -> bool {
+        let pool = self.get_pool().await;
+        let result = delete_to_by_ticket_id(&pool, ticket_id).await;
+        // update to_count
+        self.update_to_count().await;
+        if result.rows_affected() == 1 {
+            true
+        } else {
+            false
+        }
+    }
+
+
+}
+
+// tests for TextualObjectMachine operation methods
+#[cfg(test)]
+mod test {
+
+    // initiate for tests
+
+    use std::path::PathBuf;
+    use crate::enums::store_type::StoreType;
+    use crate::to::textual_object::TextualObject;
+    use crate::to_machine::to_machine_struct::TextualObjectMachine;
+
+    pub fn get_test_asset_path(file_name: &str) -> String {
+        let mut cargo_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        cargo_dir.push("resources/test/");
+        cargo_dir.push(file_name);
+        // convert the PathBuf to path string
+        cargo_dir.into_os_string().into_string().unwrap()
+    }
+
+    // test add to to existent sqlite
+    #[tokio::test]
+    async fn test_new_existent_sqlite_add() {
+        let existent_sqlite_file = get_test_asset_path("existent_sqlite_file.sqlite");
+        // create a new TextualObjectMachineRs with SQLITE store
+        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE).await;
+        let current_to_count = tom.to_count;
+        // check if the machine is created
+        assert_eq!(tom.store_type, StoreType::SQLITE);
+        assert_eq!(tom.store_path, existent_sqlite_file);
+        // create a new textual object
+        let sample_to = TextualObject::get_sample();
+        // add the textual object to the machine
+        let id = tom.add_textual_object(&sample_to).await;
+        // check if the textual object is added
+        assert_eq!(tom.to_count, current_to_count + 1);
+    }
+
+    // test find by ticket id
+    #[tokio::test]
+    async fn test_find_by_ticket_id() {
+        let existent_sqlite_file = get_test_asset_path("existent_sqlite_file.sqlite");
+        // create a new TextualObjectMachineRs with SQLITE store
+        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE).await;
+        let current_to_count = tom.to_count;
+        // check if the machine is created
+        assert_eq!(tom.store_type, StoreType::SQLITE);
+        assert_eq!(tom.store_path, existent_sqlite_file);
+        // create a new textual object
+        let sample_to = TextualObject::get_sample();
+        // add the textual object to the machine
+        let id = tom.add_textual_object(&sample_to).await;
+        // check if the textual object is added
+        assert_eq!(tom.to_count, current_to_count + 1);
+        // find the textual object by ticket id
+        let found_to = tom.find(&sample_to.ticket_id).await;
+        // check if the textual object is found
+        assert_eq!(found_to.unwrap().ticket_id, sample_to.ticket_id);
+    }
+
+    // test delete by ticket id
+    #[tokio::test]
+    async fn test_delete_by_ticket_id() {
+        let existent_sqlite_file = get_test_asset_path("existent_sqlite_file.sqlite");
+        // create a new TextualObjectMachineRs with SQLITE store
+        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE).await;
+        let current_to_count = tom.to_count;
+        // check if the machine is created
+        assert_eq!(tom.store_type, StoreType::SQLITE);
+        assert_eq!(tom.store_path, existent_sqlite_file);
+        // create a new textual object
+        let sample_to = TextualObject::get_sample();
+        // add the textual object to the machine
+        let id = tom.add_textual_object(&sample_to).await;
+        // check if the textual object is added
+        assert_eq!(tom.to_count, current_to_count + 1);
+        // find the textual object by ticket id
+        let found_to = tom.find(&sample_to.ticket_id).await;
+        // check if the textual object is found
+        assert_eq!(found_to.unwrap().ticket_id, sample_to.ticket_id);
+        // delete the textual object by ticket id
+        let result = tom.delete(&sample_to.ticket_id).await;
+        // check if the textual object is deleted
+        assert_eq!(result, true);
+        // check if the textual object is not found
+        let found_to = tom.find(&sample_to.ticket_id).await;
+        assert_eq!(found_to.is_none(), true);
+        // check count after delete
+        assert_eq!(tom.to_count, current_to_count);
+    }
+
+    // test find all by ticket ids
+    #[tokio::test]
+    async fn test_find_all_by_ticket_ids() {
+        let existent_sqlite_file = get_test_asset_path("existent_sqlite_file.sqlite");
+        // create a new TextualObjectMachineRs with SQLITE store
+        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE).await;
+        let current_to_count = tom.to_count;
+        // create three new textual objects
+        let sample_to1 = TextualObject::get_sample();
+        let sample_to2 = TextualObject::get_sample();
+        let sample_to3 = TextualObject::get_sample();
+        // add the textual objects to the machine
+        let id1 = tom.add_textual_object(&sample_to1).await;
+        let id2 = tom.add_textual_object(&sample_to2).await;
+        let id3 = tom.add_textual_object(&sample_to3).await;
+        // find all the textual objects by ticket ids
+        let found_tos = tom.find_all(&vec![&sample_to1.ticket_id, &sample_to2.ticket_id, &sample_to3.ticket_id]).await;
+        // check if the textual objects are found
+        assert_eq!(found_tos.len(), 3);
+        // check if the textual objects are found
+        assert_eq!(&found_tos[0].ticket_id, &sample_to1.ticket_id);
+    }
+}

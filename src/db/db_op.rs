@@ -1,4 +1,4 @@
-
+use std::error::Error;
 use rand::{distributions::Alphanumeric, Rng};
 
 use sqlx::migrate::MigrateDatabase;
@@ -8,6 +8,38 @@ use uuid::Uuid;
 use crate::db::to_db_op::insert_to;
 use crate::to::textual_object::TextualObject;
 use crate::utils::id_generator::generate_id;
+
+// main entry point to initialize database
+pub(crate) async fn initialize_database(db_path: &str) -> Result<(), sqlx::Error> {
+// check if it exists and has the right table structure, if not, create it
+
+// check if db file exists, if not, create it
+    let if_exists = check_if_database_exists(db_path).await.unwrap();
+    if !if_exists {
+        create_empty_database(db_path).await;
+    }
+    // get pool to database
+    let pool = connect_to_database(db_path).await;
+    // check if the tables are there, if not, create them
+    let if_tables_exist = check_if_tables_exist(&pool).await.unwrap();
+    if !if_tables_exist {
+        create_initial_table(&pool).await;
+    }
+    Ok(())
+}
+
+async fn check_if_tables_exist(p0: &Pool<Sqlite>) -> Result<bool, sqlx::Error> {
+    let mut stmt = sqlx::query(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='textual_objects';"
+    );
+    let rows = stmt.fetch_all(p0).await?;
+    if rows.len() > 0 {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
 
 // create empty database
 pub(crate)  async fn create_empty_database(db_path: &str) {
@@ -43,6 +75,7 @@ async fn create_initial_table(pool: &Pool<Sqlite>) {
 
 }
 
+
 // connect to the database
 pub(crate) async fn connect_to_database(db_path: &str) -> Pool<Sqlite> {
     let pool = SqlitePool::connect(db_path).await;
@@ -56,7 +89,7 @@ pub(crate) async fn connect_to_database(db_path: &str) -> Pool<Sqlite> {
 }
 
 // check if database exists
-async fn database_exists(db_path: &str) -> Result<bool, sqlx::Error> {
+async fn check_if_database_exists(db_path: &str) -> Result<bool, sqlx::Error> {
     let options = Sqlite::database_exists(db_path).await;
     options
 }
@@ -171,7 +204,7 @@ mod tests {
         let db_path = DB_PATH;
         // create database
         create_empty_database(db_path).await;
-        let exists = database_exists(db_path).await;
+        let exists = check_if_database_exists(db_path).await;
         // handle exists Result
         match exists {
             Ok(exists) => {
