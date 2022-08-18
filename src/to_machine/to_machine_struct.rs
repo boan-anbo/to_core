@@ -3,16 +3,18 @@ The main entry point of TO application. This needs to be written in as many lang
 This is the Rust version.
  */
 
-use sqlx::{Pool, Sqlite};
+use std::path::PathBuf;
 
-use crate::enums::store_type::StoreType;
+use sqlx::{Error, Pool, Sqlite, SqliteConnection};
+use sqlx::pool::PoolConnection;
 
 use crate::db::db_op::{connect_to_database, initialize_database, join_db_path};
-use crate::db::to_db_op::{count_textual_objects};
-
+use crate::db::to_db_op::count_textual_objects;
+use crate::enums::store_type::StoreType;
 use crate::to_machine::to_machine_option::ToMachineOption;
+use crate::utils::id_generator::generate_id;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone)]
 pub struct TextualObjectMachine {
     // store type
     pub(crate) store_type: StoreType,
@@ -21,22 +23,54 @@ pub struct TextualObjectMachine {
     // number of tos in the store, read only for the outside world
     pub(crate) to_count: i64,
 
+    // pool
+    pub(crate) pool: Option<Pool<Sqlite>>,
+
 }
+
 
 // default constructor for TextualObjectMachineRs
 impl TextualObjectMachine {
     pub async fn new(store_directory: &str, store_type: StoreType, input_opt: Option<ToMachineOption>) -> Self {
+        // check if store_directory is a path to a directory, not a path to a file
+        let mut path = PathBuf::from(store_directory);
+
+        // check if path exists
+        if !path.exists() {
+            // create directory
+            std::fs::create_dir_all(&path).unwrap();
+        }
+
+        if !path.is_dir() {
+            panic!("store_directory is a path to a file, not a path to a directory; if you want to specify a name, use ToMahineOption");
+        }
+
+
         let mut to_count = 0;
 
 
         // check if the opt.store_file_name is specified, defaults to _to_store.db
         let mut store_file_name = "_to_store.db".to_string();
+
         if let Some(opt) = input_opt {
-            if let Some(store_file_name_opt) = opt.store_file_name {
-                store_file_name = store_file_name_opt.to_string();
+            if opt.use_random_file_name {
+                store_file_name = generate_id();
+            } else {
+                if let Some(store_file_name_opt) = opt.store_file_name {
+                    store_file_name = store_file_name_opt.to_string();
+                }
             }
         }
 
+        // instantiate an temporary object
+        let mut tom = TextualObjectMachine {
+            store_type,
+            store_path: String::new(),
+            to_count,
+            pool: None,
+        };
+
+        // initialize db and complete temporary object information
         match store_type {
             StoreType::JSON => {
                 // create a new TextualObjectMachineRs with JSON store
@@ -51,26 +85,16 @@ impl TextualObjectMachine {
                 let re = initialize_database(store_directory, &store_file_name).await;
                 if re.is_err() {
                     panic!("Check file conflict: cannot initialize database at {}", join_db_path(store_directory, &store_file_name));
+                } else {
+                    tom.store_path = re.unwrap();
                 }
-                // get pool
-                let pool = connect_to_database(store_directory).await;
                 // get count of tos in the store
-                to_count = count_textual_objects(&pool).await;
-                match re {
-                    Ok(_) => {}
-                    // print out error message
-                    Err(e) => {
-                        panic!("{:?}", e);
-                    }
-                }
             }
         }
 
-        TextualObjectMachine {
-            store_type,
-            store_path: String::from(join_db_path(store_directory, &store_file_name)),
-            to_count,
-        }
+        // update item count
+        tom.update_to_count();
+        tom
     }
 }
 
@@ -92,8 +116,21 @@ impl TextualObjectMachine {
 
 // implement uitility functions for TextualObjectMachine
 impl TextualObjectMachine {
-    pub(crate) async fn get_pool(&self) -> Pool<Sqlite> {
-        connect_to_database(&self.store_path).await
+    pub(crate) async fn get_pool(&mut self) -> PoolConnection<Sqlite> {
+        // check if TOM has a pool, if not, create a new one
+        if self.pool.is_none() {
+            self.pool = Some(connect_to_database(&self.store_path).await);
+        }
+        if self.pool.as_ref().unwrap().is_closed() {
+            self.pool = Some(connect_to_database(&self.store_path).await);
+        }
+       let result = self.pool.as_ref().as_mut().unwrap().acquire().await;
+       match result {
+              Ok(conn) =>conn,
+              Err(e) => {
+                  panic!("Cannot get connection from pool: ");
+              }
+       }
     }
 }
 
@@ -102,19 +139,17 @@ impl TextualObjectMachine {
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
-    
+
     use crate::enums::store_type::StoreType;
-    
     use crate::to_machine::to_machine_option::ToMachineOption;
     use crate::to_machine::to_machine_struct::TextualObjectMachine;
     use crate::utils::id_generator::generate_id;
 
-
-    // initiate for tests
+// initiate for tests
 
     pub fn get_test_asset_path(file_name: Option<&str>) -> String {
         let mut cargo_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        cargo_dir.push("resources/test/");
+        cargo_dir.push("resources/test/db");
         if let Some(file_name) = file_name {
             cargo_dir.push(file_name);
         } else {}
@@ -126,7 +161,7 @@ mod tests {
     #[tokio::test]
     async fn test_initialize_tom_with_random_store_name() {
         let test_db_file_name = generate_id();
-        let existent_sqlite_file = get_test_asset_path(Some(test_db_file_name.as_str()));
+        let existent_sqlite_file = get_test_asset_path(None);
         // create a new TextualObjectMachineRs with SQLITE store
         let machine = TextualObjectMachine::
         new(&existent_sqlite_file, StoreType::SQLITE,

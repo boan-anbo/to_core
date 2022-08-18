@@ -1,11 +1,25 @@
+use crate::enums::store_type::StoreType;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct ToMachineOption {
+    // use random file name
+    pub use_random_file_name: bool,
     // specify a name for the store, rather than the default name: _to_store.db
     pub store_file_name: Option<String>,
 
     // store type
-    pub store_type: String,
+    pub store_type: StoreType,
+}
+
+// impl default for ToMachineOption
+impl Default for ToMachineOption {
+    fn default() -> Self {
+        ToMachineOption {
+            use_random_file_name: false,
+            store_file_name: None,
+            store_type: StoreType::SQLITE
+        }
+    }
 }
 
 impl ToMachineOption {
@@ -17,12 +31,9 @@ impl ToMachineOption {
     }
 }
 
-// implement default new function for ToMachineOption
+// implement default new function for ToMachineOption with default store_type: SQLITE
 impl ToMachineOption {
     pub fn new() -> Self {
-        ToMachineOption {
-            store_file_name: None,
-            store_type: "SQLITE".to_string(),
-        }
+        ToMachineOption::default()
     }
 }

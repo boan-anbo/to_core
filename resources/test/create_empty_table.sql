@@ -1,3 +1,6 @@
+CREATE DATABASE IF NOT EXISTS `_to_store`;
+USE `_to_store`;
+
 CREATE TABLE IF NOT EXISTS textual_objects
 (
     id              PRIMARY KEY NOT NULL,

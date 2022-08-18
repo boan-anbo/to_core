@@ -1,11 +1,10 @@
-
 use chrono::{DateTime, FixedOffset, Local};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+
 use crate::to_ticket::to_ticket_marker::ToMarker;
 use crate::to_ticket::to_ticket_position::ToTicketInTextPosition;
 use crate::utils::id_generator::generate_id;
-
 
 #[derive(Serialize, Deserialize)]
 pub struct TextualObjectTicket {
@@ -61,6 +60,7 @@ impl Default for TextualObjectTicket {
 #[cfg(test)]
 mod tests {
     use chrono::{Datelike, Utc};
+
     use super::*;
 
     #[test]

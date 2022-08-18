@@ -6,7 +6,6 @@ use uuid::Uuid;
 use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
 use crate::utils::id_generator::generate_id;
 
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TextualObject {
     pub id: Uuid,
@@ -102,8 +101,8 @@ impl From<TextualObject> for TextualObjectTicket {
 // test module
 #[cfg(test)]
 mod test {
-    
     use uuid::Uuid;
+
     use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
 
     // test get_sample

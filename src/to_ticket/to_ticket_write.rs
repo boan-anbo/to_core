@@ -58,6 +58,7 @@ impl TextualObjectTicket {
 #[cfg(test)]
 mod tests {
     use chrono::{FixedOffset, TimeZone, Utc};
+
     use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
 
     #[test]

@@ -1,7 +1,8 @@
 use chrono::{DateTime, FixedOffset, NaiveDateTime};
+
+use crate::to_ticket::parser::parser_option::ParserOption;
 use crate::to_ticket::to_ticket_position::ToTicketInTextPosition;
 use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
-use crate::to_ticket::parser::parser_option::ParserOption;
 
 impl TextualObjectTicket {
     pub fn parse(mark_content: &str, opt: &ParserOption, intext_position: Option<ToTicketInTextPosition>) -> Self {
@@ -74,8 +75,9 @@ mod tests {
 Parser tests
  */
     use chrono::{Datelike, TimeZone, Utc};
-    use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
+
     use crate::to_ticket::parser::parser_option::ParserOption;
+    use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
 
     #[test]
     fn test_parse() {

@@ -1,21 +1,26 @@
 // implement data operation methods for TextualObjectMachine
 
-use uuid::Uuid;
-use crate::db::to_db_op::{count_textual_objects, delete_to_by_ticket_id, find_to_by_ticket_id, insert_to};
+use std::borrow::BorrowMut;
 
+use sqlx::Connection;
+use uuid::Uuid;
+
+use crate::db::to_db_op::{count_textual_objects, delete_to_by_ticket_id, find_to_by_ticket_id, insert_to};
 use crate::to::textual_object::TextualObject;
 use crate::to_machine::to_machine_struct::TextualObjectMachine;
 
 impl TextualObjectMachine {
     pub async fn update_to_count(&mut self) -> i64 {
-        let pool = self.get_pool().await;
-        self.to_count = count_textual_objects(&pool).await;
+        let mut pool = self.get_pool().await;
+
+        let count = count_textual_objects(pool).await;
+        self.set_to_count(count);
         self.to_count
     }
 
     pub async fn add_textual_object(&mut self, textual_object: &TextualObject) -> Uuid {
-        let pool = self.get_pool().await;
-        let id = insert_to(&pool, textual_object).await;
+        let mut pool = self.get_pool().await;
+        let id = insert_to(pool.borrow_mut(), textual_object).await;
         // update to_count
         self.update_to_count().await;
         id
@@ -23,7 +28,7 @@ impl TextualObjectMachine {
 
     // find by ticket id
     pub async fn find(&mut self, ticket_id: &str) -> Option<TextualObject> {
-        let found_to = find_to_by_ticket_id(&self.get_pool().await, ticket_id).await;
+        let found_to = find_to_by_ticket_id(self.get_pool().await.borrow_mut(), ticket_id).await;
         found_to
     }
 
@@ -47,8 +52,8 @@ impl TextualObjectMachine {
 
     // delete by ticket id, return true if successful
     pub async fn delete(&mut self, ticket_id: &String) -> bool {
-        let pool = self.get_pool().await;
-        let result = delete_to_by_ticket_id(&pool, ticket_id).await;
+        let mut pool = self.get_pool().await;
+        let result = delete_to_by_ticket_id(pool.borrow_mut(), ticket_id).await;
         // update to_count
         self.update_to_count().await;
         if result.rows_affected() == 1 {
@@ -66,10 +71,12 @@ mod test {
     // initiate for tests
 
     use std::path::PathBuf;
+
     use crate::enums::store_type::StoreType;
     use crate::to::textual_object::TextualObject;
-    
+    use crate::to_machine::to_machine_option::ToMachineOption;
     use crate::to_machine::to_machine_struct::TextualObjectMachine;
+    use crate::utils::id_generator::generate_id;
 
     pub fn get_test_asset_path(file_name: &str) -> String {
         let mut cargo_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -81,7 +88,7 @@ mod test {
 
     pub fn get_test_asset_path_without_file() -> String {
         let mut cargo_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        cargo_dir.push("resources/test/");
+        cargo_dir.push("resources/test/db/");
         // convert the PathBuf to path string
         cargo_dir.into_os_string().into_string().unwrap()
     }
@@ -99,17 +106,22 @@ mod test {
     async fn test_new_existent_sqlite_add() {
         let existent_sqlite_file = get_test_asset_path_without_file();
         // create a new TextualObjectMachineRs with SQLITE store
-        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE, None).await;
+        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE, Some(
+            ToMachineOption {
+                use_random_file_name: true,
+                ..Default::default()
+            }
+        )).await;
         let current_to_count = tom.to_count;
         // check if the machine is created
         assert_eq!(tom.store_type, StoreType::SQLITE);
-        assert_eq!(tom.store_path, get_test_asset_path_with_default_name());
         // create a new textual object
         let sample_to = TextualObject::get_sample();
         // add the textual object to the machine
         let _id = tom.add_textual_object(&sample_to).await;
         // check if the textual object is added
         assert_eq!(tom.to_count, current_to_count + 1);
+        tom.delete_store().await;
     }
 
     // test find by ticket id
@@ -117,11 +129,13 @@ mod test {
     async fn test_find_by_ticket_id() {
         let existent_sqlite_file = get_test_asset_path_without_file();
         // create a new TextualObjectMachineRs with SQLITE store
-        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE, None).await;
+        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE, Some(ToMachineOption {
+            store_file_name: Some(generate_id()),
+            ..Default::default()
+        })).await;
         let current_to_count = tom.to_count;
         // check if the machine is created
         assert_eq!(tom.store_type, StoreType::SQLITE);
-        assert_eq!(tom.store_path, get_test_asset_path_with_default_name());
         // create a new textual object
         let sample_to = TextualObject::get_sample();
         // add the textual object to the machine
@@ -139,11 +153,15 @@ mod test {
     async fn test_delete_by_ticket_id() {
         let existent_sqlite_file = get_test_asset_path_without_file();
         // create a new TextualObjectMachineRs with SQLITE store
-        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE, None).await;
+        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE,
+                                                Some(ToMachineOption {
+                                                    store_file_name: Some(generate_id()),
+                                                    ..Default::default()
+                                                }),
+        ).await;
         let current_to_count = tom.to_count;
         // check if the machine is created
         assert_eq!(tom.store_type, StoreType::SQLITE);
-        assert_eq!(tom.store_path, get_test_asset_path_with_default_name());
         // create a new textual object
         let sample_to = TextualObject::get_sample();
         // add the textual object to the machine

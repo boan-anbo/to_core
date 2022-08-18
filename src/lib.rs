@@ -1,3 +1,5 @@
+extern crate core;
+
 pub mod entities;
 pub(crate) mod utils;
 pub mod to_machine;

@@ -1,11 +1,14 @@
-
+use std::borrow::BorrowMut;
+use std::fs;
 use std::path::PathBuf;
-use rand::{distributions::Alphanumeric, Rng};
 
+use rand::{distributions::Alphanumeric, Rng};
+use sqlx::{Pool, Row, Sqlite, SqliteConnection};
 use sqlx::migrate::MigrateDatabase;
-use sqlx::{Pool, Row, Sqlite};
-use sqlx::sqlite::{SqlitePool};
+use sqlx::pool::PoolConnection;
+use sqlx::sqlite::SqlitePool;
 use uuid::Uuid;
+
 use crate::db::to_db_op::insert_to;
 use crate::to::textual_object::TextualObject;
 use crate::utils::id_generator::generate_id;
@@ -26,6 +29,11 @@ pub(crate) async fn initialize_database(db_root_path: &str, db_file_name: &str) 
 // check if it exists and has the right table structure, if not, create it
     let db_path = join_db_path(db_root_path, db_file_name);
 
+    // check if directory exists, if not, create it
+    if !PathBuf::from(db_root_path).exists() {
+        fs::create_dir_all(db_root_path).unwrap();
+    }
+
 // check if db file exists, if not, create it
     let if_exists = check_if_database_exists(&db_path).await.unwrap();
     if !if_exists {
@@ -38,6 +46,7 @@ pub(crate) async fn initialize_database(db_root_path: &str, db_file_name: &str) 
     if !if_tables_exist {
         create_initial_table(&pool).await;
     }
+    pool.close().await;
     Ok(db_path)
 }
 
@@ -112,10 +121,18 @@ async fn check_if_database_exists(db_path: &str) -> Result<bool, sqlx::Error> {
 }
 
 // drop database
-async fn drop_database(db_path: &str) -> Result<(), sqlx::Error> {
-    let options = Sqlite::drop_database(db_path).await;
-    options
+pub async fn drop_database(db_path: &str) -> Result<(), sqlx::Error> {
+    // delete the db file at db_path in filesystem
+    let re = fs::remove_file(db_path);
+    match re {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e.into())
+    }
+
 }
+
+// release database
+
 
 // remove all tables from database
 async fn remove_all_tables(pool: &Pool<Sqlite>) {
@@ -135,7 +152,7 @@ pub(crate) async fn reset_database(db_path: &str) {
 }
 
 // seed 10 textual objects into database
-async fn seed_random_data(pool: &Pool<Sqlite>) {
+async fn seed_random_data(pool: &mut PoolConnection<Sqlite>) {
     let mut sid = String::new();
     for _ in 0..10 {
         sid.clear();
@@ -171,7 +188,7 @@ async fn seed_random_data(pool: &Pool<Sqlite>) {
                         }
                     })),
         };
-        insert_to(&pool, &textual_object).await;
+        insert_to(pool, &textual_object).await;
     }
 }
 
@@ -182,22 +199,18 @@ async fn reset_database_with_random_data(db_path: &str) {
     reset_database(db_path).await;
     // connect to database
     let pool = connect_to_database(db_path).await;
+    let mut connetion = pool.acquire().await.unwrap();
 
-    seed_random_data(&pool).await;
+    seed_random_data(connetion.borrow_mut()).await;
 }
 
 // unit tests
 #[cfg(test)]
 mod tests {
-    
-    
-    
-
     use super::*;
 
-
     static DB_PATH_WITH_FILE_NAME: &str = "resources/test/test_to_core.db";
-    static TEST_DB_PATH_WITHOUT_FILE_NAME: &str = "resources/test/";
+    static TEST_DB_PATH_WITHOUT_FILE_NAME: &str = "resources/test/db/";
 
     // test create_empty_database
     #[tokio::test]
@@ -320,7 +333,13 @@ mod tests {
         let random_file_name = generate_id();
         // initialize database
         let _intialized_database = initialize_database(TEST_DB_PATH_WITHOUT_FILE_NAME, random_file_name.as_str()).await;
-
+    }
+    #[tokio::test]
+    async fn remove_all_test_databases() {
+        let path = TEST_DB_PATH_WITHOUT_FILE_NAME;
+        let mut directory = PathBuf::from(path);
+        // remove all files from the directory
+        fs::remove_dir_all(directory).unwrap();
     }
 }
 

@@ -1,28 +1,40 @@
 // test groups
 #[cfg(test)]
 mod test {
-    use std::env;
+    use std::borrow::{Borrow, BorrowMut};
+    use std::{env, fs};
+    use std::path::PathBuf;
+
     use chrono::Utc;
     use dotenv::dotenv;
     use serde_json::Value;
+    use sqlx::Connection;
     use uuid::Uuid;
-    use crate::db::db_op::{connect_to_database, reset_database};
+
+    use crate::db::db_op::{connect_to_database, initialize_database, reset_database};
     use crate::db::to_db_op::{find_to_by_id, find_to_by_ticket_id, insert_to};
     use crate::to::textual_object::TextualObject;
     use crate::utils::id_generator::generate_id;
 
     // save env DATABASE_URL in .env file to static variable
-    fn get_test_database_url() -> String {
-        dotenv().ok();
-        env::var("DATABASE_URL").expect("DATABASE_URL must be set")
+    fn get_random_database_dir() -> String {
+        let mut cargo_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        cargo_dir.push("resources/test/db");
+        cargo_dir.into_os_string().into_string().unwrap()
+    }
+
+
+    async fn get_random_database() -> String {
+        let random_id = generate_id();
+        let initialized_database_url = initialize_database(&get_random_database_dir(), &random_id).await;
+        initialized_database_url.unwrap()
     }
 
     // test write textual object to database
     #[tokio::test]
     async fn write_textual_object_to_database_test() {
         // create database
-        reset_database(&get_test_database_url()).await;
-
+        let random_database = get_random_database().await;
         // create textual object
         let textual_object = TextualObject {
             id: Uuid::new_v4(),
@@ -39,15 +51,18 @@ mod test {
         };
         // write textual object to database
         // get pool
-        let pool = connect_to_database(&get_test_database_url()).await;
-        let _uuid = insert_to(&pool, &textual_object).await;
+        let pool = connect_to_database(&random_database).await;
+        let mut conn = pool.acquire().await.unwrap();
+        let _uuid = insert_to(conn.borrow_mut(), &textual_object).await;
     }
 
     // test read textual object from database
     #[tokio::test]
     async fn read_textual_object_from_database_test() {
-        reset_database(&get_test_database_url()).await;
-        let pool = connect_to_database(&get_test_database_url()).await;
+        // create database
+        let random_database = get_random_database().await;
+
+        let pool = connect_to_database(&random_database).await;
         // create textual object
         let uuid = Uuid::new_v4();
         let json = serde_json::json!({
@@ -76,10 +91,17 @@ mod test {
             json: sqlx::types::Json(json),
         };
         print!("{:?}", &uuid);
+        let mut conn = pool.acquire().await.unwrap();
         // write textual object to database
-        insert_to(&pool, &textual_object_insert).await;
+        insert_to(conn.borrow_mut(), &textual_object_insert).await;
         // read textual object from database
-        let textual_object_read = find_to_by_id(&pool, &textual_object_insert.id).await.unwrap();
+
+        let mut conn2 = pool.acquire().await.unwrap();
+
+        let textual_object_read = find_to_by_id(conn2.borrow_mut(), &textual_object_insert.id).await.unwrap();
+
+
+
         // handle textual_object_read Result
         assert_eq!(textual_object_read.id, uuid);
         assert_eq!(textual_object_read.ticket_id, textual_object_insert.ticket_id);
@@ -107,10 +129,14 @@ mod test {
     // test find_by_id
     #[tokio::test]
     async fn find_textual_object_from_database_test() {
-        reset_database(&get_test_database_url()).await;
-        let pool = connect_to_database(&get_test_database_url()).await;
+        // create database
+        let random_database = get_random_database().await;
+
+        let pool = connect_to_database(&random_database).await;
+
+        let mut conn = pool.acquire().await.unwrap();
         // when result is non
-        let textual_object_read = find_to_by_id(&pool, &Uuid::new_v4()).await;
+        let textual_object_read = find_to_by_id(conn.borrow_mut(), &Uuid::new_v4()).await;
         // delete textual object from database
         assert!(textual_object_read.is_none());
 
@@ -129,9 +155,11 @@ mod test {
             updated: Utc::now().naive_utc(),
             json: sqlx::types::Json(Value::Null),
         };
-        let received_id = insert_to(&pool, &to_insert).await;
+        let mut conn = pool.acquire().await.unwrap();
+        let received_id = insert_to(conn.borrow_mut(), &to_insert).await;
         assert_eq!(received_id, to_insert_uuid);
-        let found_to = find_to_by_id(&pool, &to_insert_uuid).await;
+        let mut conn2 = pool.acquire().await.unwrap();
+        let found_to = find_to_by_id(conn.borrow_mut(), &to_insert_uuid).await;
         assert!(found_to.is_some());
         assert_eq!(found_to.unwrap().id, to_insert_uuid);
     }
@@ -139,10 +167,14 @@ mod test {
     // test find_by_ticket_id
     #[tokio::test]
     async fn find_textual_object_by_ticket_id_test() {
-        reset_database(&get_test_database_url()).await;
-        let pool = connect_to_database(&get_test_database_url()).await;
+        // create database
+        let random_database = get_random_database().await;
+
+        let pool = connect_to_database(&random_database).await;
+        // conn
+        let mut conn = pool.acquire().await.unwrap();
         // when result is none
-        let textual_object_read = find_to_by_ticket_id(&pool, &generate_id()).await;
+        let textual_object_read = find_to_by_ticket_id(conn.borrow_mut(), &generate_id()).await;
         // delete textual object from database
         assert!(textual_object_read.is_none());
 
@@ -161,10 +193,11 @@ mod test {
             updated: Utc::now().naive_utc(),
             json: sqlx::types::Json(Value::Null),
         };
-        let received_id = insert_to(&pool, &to_insert).await;
+        let mut conn = pool.acquire().await.unwrap();
+        let received_id = insert_to(conn.borrow_mut(), &to_insert).await;
         assert_eq!(received_id, to_insert.id);
-        let found_to = find_to_by_ticket_id(&pool, &ticket_id).await;
+        let found_to = find_to_by_ticket_id(conn.borrow_mut(), &ticket_id).await;
         assert!(found_to.is_some());
-        assert_eq!(found_to.unwrap().ticket_id,ticket_id);
+        assert_eq!(found_to.unwrap().ticket_id, ticket_id);
     }
 }
