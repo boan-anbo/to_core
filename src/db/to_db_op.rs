@@ -1,12 +1,12 @@
 use sqlx::{Error, Pool, Row, Sqlite};
 use sqlx::sqlite::{SqliteQueryResult, SqliteRow};
 use uuid::Uuid;
-use crate::db::db_op::reset_database;
+
 use crate::to::textual_object::TextualObject;
 
 // store textual object into database
 pub(crate) async fn insert_to(pool: &Pool<Sqlite>, textual_object: &TextualObject) -> Uuid {
-    let id = textual_object.id.to_string();
+    let _id = textual_object.id.to_string();
     // insert textual object into database
     let insert_query = sqlx::query!(
         "INSERT INTO textual_objects (id,
@@ -116,7 +116,7 @@ fn load_sqlite_row_to_textual_object(textual_object_row: Result<SqliteRow, Error
             };
             Some(textual_object)
         }
-        Err(e) => {
+        Err(_e) => {
             None
         }
     }
