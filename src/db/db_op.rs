@@ -1,4 +1,4 @@
-use std::error::Error;
+
 use std::path::PathBuf;
 use rand::{distributions::Alphanumeric, Rng};
 
@@ -42,7 +42,7 @@ pub(crate) async fn initialize_database(db_root_path: &str, db_file_name: &str) 
 }
 
 async fn check_if_tables_exist(p0: &Pool<Sqlite>) -> Result<bool, sqlx::Error> {
-    let mut stmt = sqlx::query(
+    let stmt = sqlx::query(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='textual_objects';"
     );
     let rows = stmt.fetch_all(p0).await?;
@@ -189,9 +189,9 @@ async fn reset_database_with_random_data(db_path: &str) {
 // unit tests
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-    use chrono::Utc;
-    use serde_json::{Value};
+    
+    
+    
 
     use super::*;
 
@@ -319,7 +319,7 @@ mod tests {
     async fn initialize_database_test() {
         let random_file_name = generate_id();
         // initialize database
-        let intialized_database = initialize_database(TEST_DB_PATH_WITHOUT_FILE_NAME, random_file_name.as_str()).await;
+        let _intialized_database = initialize_database(TEST_DB_PATH_WITHOUT_FILE_NAME, random_file_name.as_str()).await;
 
     }
 }

@@ -2,7 +2,7 @@ use chrono::{FixedOffset, TimeZone, Utc};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::to_ticket::to_ticket_option::ToTicketPrintOption;
+
 use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
 use crate::utils::id_generator::generate_id;
 
@@ -102,7 +102,7 @@ impl From<TextualObject> for TextualObjectTicket {
 // test module
 #[cfg(test)]
 mod test {
-    use chrono::Utc;
+    
     use uuid::Uuid;
     use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
 

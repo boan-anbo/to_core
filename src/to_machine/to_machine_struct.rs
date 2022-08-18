@@ -2,14 +2,14 @@
 The main entry point of TO application. This needs to be written in as many languages as there is a need for.
 This is the Rust version.
  */
-use std::path::Path;
+
 use sqlx::{Pool, Sqlite};
-use uuid::Uuid;
+
 use crate::enums::store_type::StoreType;
-use wasm_bindgen::prelude::*;
+
 use crate::db::db_op::{connect_to_database, initialize_database, join_db_path};
-use crate::db::to_db_op::{count_textual_objects, insert_to};
-use crate::to::textual_object::TextualObject;
+use crate::db::to_db_op::{count_textual_objects};
+
 use crate::to_machine::to_machine_option::ToMachineOption;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -102,9 +102,9 @@ impl TextualObjectMachine {
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
-    use uuid::Uuid;
+    
     use crate::enums::store_type::StoreType;
-    use crate::to::textual_object::TextualObject;
+    
     use crate::to_machine::to_machine_option::ToMachineOption;
     use crate::to_machine::to_machine_struct::TextualObjectMachine;
     use crate::utils::id_generator::generate_id;

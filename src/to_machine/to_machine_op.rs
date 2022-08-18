@@ -2,7 +2,7 @@
 
 use uuid::Uuid;
 use crate::db::to_db_op::{count_textual_objects, delete_to_by_ticket_id, find_to_by_ticket_id, insert_to};
-use crate::enums::store_type::StoreType;
+
 use crate::to::textual_object::TextualObject;
 use crate::to_machine::to_machine_struct::TextualObjectMachine;
 
@@ -68,7 +68,7 @@ mod test {
     use std::path::PathBuf;
     use crate::enums::store_type::StoreType;
     use crate::to::textual_object::TextualObject;
-    use crate::to_machine::to_machine_option::ToMachineOption;
+    
     use crate::to_machine::to_machine_struct::TextualObjectMachine;
 
     pub fn get_test_asset_path(file_name: &str) -> String {
@@ -107,7 +107,7 @@ mod test {
         // create a new textual object
         let sample_to = TextualObject::get_sample();
         // add the textual object to the machine
-        let id = tom.add_textual_object(&sample_to).await;
+        let _id = tom.add_textual_object(&sample_to).await;
         // check if the textual object is added
         assert_eq!(tom.to_count, current_to_count + 1);
     }
@@ -125,7 +125,7 @@ mod test {
         // create a new textual object
         let sample_to = TextualObject::get_sample();
         // add the textual object to the machine
-        let id = tom.add_textual_object(&sample_to).await;
+        let _id = tom.add_textual_object(&sample_to).await;
         // check if the textual object is added
         assert_eq!(tom.to_count, current_to_count + 1);
         // find the textual object by ticket id
@@ -147,7 +147,7 @@ mod test {
         // create a new textual object
         let sample_to = TextualObject::get_sample();
         // add the textual object to the machine
-        let id = tom.add_textual_object(&sample_to).await;
+        let _id = tom.add_textual_object(&sample_to).await;
         // check if the textual object is added
         assert_eq!(tom.to_count, current_to_count + 1);
         // find the textual object by ticket id
@@ -171,15 +171,15 @@ mod test {
         let existent_sqlite_file = get_test_asset_path_without_file();
         // create a new TextualObjectMachineRs with SQLITE store
         let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE, None).await;
-        let current_to_count = tom.to_count;
+        let _current_to_count = tom.to_count;
         // create three new textual objects
         let sample_to1 = TextualObject::get_sample();
         let sample_to2 = TextualObject::get_sample();
         let sample_to3 = TextualObject::get_sample();
         // add the textual objects to the machine
-        let id1 = tom.add_textual_object(&sample_to1).await;
-        let id2 = tom.add_textual_object(&sample_to2).await;
-        let id3 = tom.add_textual_object(&sample_to3).await;
+        let _id1 = tom.add_textual_object(&sample_to1).await;
+        let _id2 = tom.add_textual_object(&sample_to2).await;
+        let _id3 = tom.add_textual_object(&sample_to3).await;
         // find all the textual objects by ticket ids
         let found_tos = tom.find_all(&vec![&sample_to1.ticket_id, &sample_to2.ticket_id, &sample_to3.ticket_id]).await;
         // check if the textual objects are found

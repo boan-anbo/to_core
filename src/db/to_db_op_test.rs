@@ -40,7 +40,7 @@ mod test {
         // write textual object to database
         // get pool
         let pool = connect_to_database(&get_test_database_url()).await;
-        let uuid = insert_to(&pool, &textual_object).await;
+        let _uuid = insert_to(&pool, &textual_object).await;
     }
 
     // test read textual object from database
