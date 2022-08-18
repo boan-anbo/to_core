@@ -57,8 +57,6 @@ impl TextualObjectMachine {
             false
         }
     }
-
-
 }
 
 // tests for TextualObjectMachine operation methods
@@ -70,6 +68,7 @@ mod test {
     use std::path::PathBuf;
     use crate::enums::store_type::StoreType;
     use crate::to::textual_object::TextualObject;
+    use crate::to_machine::to_machine_option::ToMachineOption;
     use crate::to_machine::to_machine_struct::TextualObjectMachine;
 
     pub fn get_test_asset_path(file_name: &str) -> String {
@@ -80,16 +79,31 @@ mod test {
         cargo_dir.into_os_string().into_string().unwrap()
     }
 
+    pub fn get_test_asset_path_without_file() -> String {
+        let mut cargo_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        cargo_dir.push("resources/test/");
+        // convert the PathBuf to path string
+        cargo_dir.into_os_string().into_string().unwrap()
+    }
+
+    pub fn get_test_asset_path_with_default_name() -> String {
+        let mut cargo_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        cargo_dir.push("resources/test/");
+        cargo_dir.push("_to_store.db");
+        // convert the PathBuf to path string
+        cargo_dir.into_os_string().into_string().unwrap()
+    }
+
     // test add to to existent sqlite
     #[tokio::test]
     async fn test_new_existent_sqlite_add() {
-        let existent_sqlite_file = get_test_asset_path("existent_sqlite_file.sqlite");
+        let existent_sqlite_file = get_test_asset_path_without_file();
         // create a new TextualObjectMachineRs with SQLITE store
-        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE).await;
+        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE, None).await;
         let current_to_count = tom.to_count;
         // check if the machine is created
         assert_eq!(tom.store_type, StoreType::SQLITE);
-        assert_eq!(tom.store_path, existent_sqlite_file);
+        assert_eq!(tom.store_path, get_test_asset_path_with_default_name());
         // create a new textual object
         let sample_to = TextualObject::get_sample();
         // add the textual object to the machine
@@ -101,13 +115,13 @@ mod test {
     // test find by ticket id
     #[tokio::test]
     async fn test_find_by_ticket_id() {
-        let existent_sqlite_file = get_test_asset_path("existent_sqlite_file.sqlite");
+        let existent_sqlite_file = get_test_asset_path_without_file();
         // create a new TextualObjectMachineRs with SQLITE store
-        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE).await;
+        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE, None).await;
         let current_to_count = tom.to_count;
         // check if the machine is created
         assert_eq!(tom.store_type, StoreType::SQLITE);
-        assert_eq!(tom.store_path, existent_sqlite_file);
+        assert_eq!(tom.store_path, get_test_asset_path_with_default_name());
         // create a new textual object
         let sample_to = TextualObject::get_sample();
         // add the textual object to the machine
@@ -123,13 +137,13 @@ mod test {
     // test delete by ticket id
     #[tokio::test]
     async fn test_delete_by_ticket_id() {
-        let existent_sqlite_file = get_test_asset_path("existent_sqlite_file.sqlite");
+        let existent_sqlite_file = get_test_asset_path_without_file();
         // create a new TextualObjectMachineRs with SQLITE store
-        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE).await;
+        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE, None).await;
         let current_to_count = tom.to_count;
         // check if the machine is created
         assert_eq!(tom.store_type, StoreType::SQLITE);
-        assert_eq!(tom.store_path, existent_sqlite_file);
+        assert_eq!(tom.store_path, get_test_asset_path_with_default_name());
         // create a new textual object
         let sample_to = TextualObject::get_sample();
         // add the textual object to the machine
@@ -154,9 +168,9 @@ mod test {
     // test find all by ticket ids
     #[tokio::test]
     async fn test_find_all_by_ticket_ids() {
-        let existent_sqlite_file = get_test_asset_path("existent_sqlite_file.sqlite");
+        let existent_sqlite_file = get_test_asset_path_without_file();
         // create a new TextualObjectMachineRs with SQLITE store
-        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE).await;
+        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE, None).await;
         let current_to_count = tom.to_count;
         // create three new textual objects
         let sample_to1 = TextualObject::get_sample();
