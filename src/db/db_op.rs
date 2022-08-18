@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::path::PathBuf;
 use rand::{distributions::Alphanumeric, Rng};
 
 use sqlx::migrate::MigrateDatabase;
@@ -9,23 +10,35 @@ use crate::db::to_db_op::insert_to;
 use crate::to::textual_object::TextualObject;
 use crate::utils::id_generator::generate_id;
 
-// main entry point to initialize database
-pub(crate) async fn initialize_database(db_path: &str) -> Result<(), sqlx::Error> {
+pub(crate) fn join_db_path(store_directory: &str, store_file_name: &str) -> String {
+    let mut path = PathBuf::new();
+    path.push(store_directory);
+    path.push(store_file_name);
+    // check if store_file_name has '.db' extension, if not, add it
+    if !store_file_name.ends_with(".db") {
+        path.set_extension("db");
+    }
+    path.into_os_string().into_string().unwrap()
+}
+
+// main entry point to initialize database, return the path of the initialized database
+pub(crate) async fn initialize_database(db_root_path: &str, db_file_name: &str) -> Result<String, sqlx::Error> {
 // check if it exists and has the right table structure, if not, create it
+    let db_path = join_db_path(db_root_path, db_file_name);
 
 // check if db file exists, if not, create it
-    let if_exists = check_if_database_exists(db_path).await.unwrap();
+    let if_exists = check_if_database_exists(&db_path).await.unwrap();
     if !if_exists {
-        create_empty_database(db_path).await;
+        create_empty_database_with_path_and_filename(db_root_path, db_file_name).await;
     }
     // get pool to database
-    let pool = connect_to_database(db_path).await;
+    let pool = connect_to_database(&db_path).await;
     // check if the tables are there, if not, create them
     let if_tables_exist = check_if_tables_exist(&pool).await.unwrap();
     if !if_tables_exist {
         create_initial_table(&pool).await;
     }
-    Ok(())
+    Ok(db_path)
 }
 
 async fn check_if_tables_exist(p0: &Pool<Sqlite>) -> Result<bool, sqlx::Error> {
@@ -42,8 +55,14 @@ async fn check_if_tables_exist(p0: &Pool<Sqlite>) -> Result<bool, sqlx::Error> {
 
 
 // create empty database
-pub(crate)  async fn create_empty_database(db_path: &str) {
+pub(crate) async fn create_empty_database(db_path: &str) {
     Sqlite::create_database(db_path).await.unwrap();
+}
+
+// create empty database with path and filename
+pub(crate) async fn create_empty_database_with_path_and_filename(root_path: &str, filename: &str) {
+    let db_path = join_db_path(root_path, filename);
+    Sqlite::create_database(&db_path).await.unwrap();
 }
 
 // create table on the empty database
@@ -71,8 +90,6 @@ async fn create_initial_table(pool: &Pool<Sqlite>) {
         .execute(pool)
         .await
         .unwrap();
-
-
 }
 
 
@@ -114,6 +131,7 @@ pub(crate) async fn reset_database(db_path: &str) {
     remove_all_tables(&pool).await;
     create_empty_database(db_path).await;
     create_initial_table(&pool).await;
+    pool.close().await;
 }
 
 // seed 10 textual objects into database
@@ -138,7 +156,7 @@ async fn seed_random_data(pool: &Pool<Sqlite>) {
             updated: chrono::NaiveDateTime::from_timestamp(0, 0),
 
             json: sqlx::types::Json(
-            serde_json::json!({
+                serde_json::json!({
                         "test_string": "test_string_value",
                         "test_number": 1,
                         "test_boolean": true,
@@ -158,8 +176,6 @@ async fn seed_random_data(pool: &Pool<Sqlite>) {
 }
 
 
-
-
 // reset with seeded database
 async fn reset_database_with_random_data(db_path: &str) {
     // create database if not exists
@@ -173,24 +189,40 @@ async fn reset_database_with_random_data(db_path: &str) {
 // unit tests
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
     use chrono::Utc;
     use serde_json::{Value};
-    
-    use super::*;
-    
 
-    static DB_PATH: &str = "resources/test/test_to_core.db";
+    use super::*;
+
+
+    static DB_PATH_WITH_FILE_NAME: &str = "resources/test/test_to_core.db";
+    static TEST_DB_PATH_WITHOUT_FILE_NAME: &str = "resources/test/";
 
     // test create_empty_database
     #[tokio::test]
     async fn test_create_empty_database() {
-        create_empty_database(DB_PATH).await;
+        create_empty_database(DB_PATH_WITH_FILE_NAME).await;
+    }
+
+    // test create_database_with_random_path
+    #[tokio::test]
+    async fn test_create_database_with_random_path() {
+        let random_file_name = generate_id();
+
+        let full_path = join_db_path(TEST_DB_PATH_WITHOUT_FILE_NAME, random_file_name.as_str());
+        create_empty_database_with_path_and_filename(TEST_DB_PATH_WITHOUT_FILE_NAME, random_file_name.as_str()).await;
+        // check if the database exists
+        let options = check_if_database_exists(full_path.as_str()).await;
+        assert!(options.unwrap());
+        // remove the database
+        drop_database(full_path.as_str()).await;
     }
 
     // test connect_to_database
     #[tokio::test]
     async fn connect_to_database_test() {
-        let db_path = DB_PATH;
+        let db_path = DB_PATH_WITH_FILE_NAME;
         let pool = connect_to_database(db_path).await;
         // handle pool Result
         assert_eq!(pool.is_closed(), false);
@@ -201,7 +233,7 @@ mod tests {
     // test database_exists
     #[tokio::test]
     async fn database_exists_test() {
-        let db_path = DB_PATH;
+        let db_path = DB_PATH_WITH_FILE_NAME;
         // create database
         create_empty_database(db_path).await;
         let exists = check_if_database_exists(db_path).await;
@@ -215,13 +247,26 @@ mod tests {
                 panic!("database_exists is err: {:?}", e);
             }
         }
+        // check a non-existing database
+        let non_existing_db_path = join_db_path(TEST_DB_PATH_WITHOUT_FILE_NAME, uuid::Uuid::new_v4().to_string().as_str());
+        let result = check_if_database_exists(non_existing_db_path.as_str()).await;
+        match result {
+            Ok(exists) => {
+                assert_eq!(exists, false);
+            }
+            Err(e) => {
+                // throw error
+                panic!("database_exists is err: {:?}", e);
+            }
+        }
+
     }
 
 
     // test remove_all_tables
     #[tokio::test]
     async fn remove_all_tables_test() {
-        let db_path = DB_PATH;
+        let db_path = DB_PATH_WITH_FILE_NAME;
         // create database
         create_empty_database(db_path).await;
         // connect to database
@@ -234,7 +279,7 @@ mod tests {
     // test create_initial_table
     #[tokio::test]
     async fn create_initial_table_test() {
-        let db_path = DB_PATH;
+        let db_path = DB_PATH_WITH_FILE_NAME;
         // create database
         create_empty_database(db_path).await;
         // connect to database
@@ -246,9 +291,7 @@ mod tests {
     // test reset_database
     #[tokio::test]
     async fn reset_database_test() {
-        let db_path = DB_PATH;
-        // create database
-        create_empty_database(db_path).await;
+        let db_path = DB_PATH_WITH_FILE_NAME;
         // reset database
         reset_database(db_path).await;
     }
@@ -256,7 +299,7 @@ mod tests {
     // test seed_random_data
     #[tokio::test]
     async fn seed_random_data_test() {
-        let db_path = DB_PATH;
+        let db_path = DB_PATH_WITH_FILE_NAME;
         // create database
         create_empty_database(db_path).await;
         // seed random data
@@ -266,11 +309,19 @@ mod tests {
     // test reset with seeded database
     #[tokio::test]
     async fn reset_database_with_random_data_test() {
-        let db_path = DB_PATH;
+        let db_path = DB_PATH_WITH_FILE_NAME;
         // reset database
         reset_database_with_random_data(db_path).await;
     }
 
+    // test initializing database
+    #[tokio::test]
+    async fn initialize_database_test() {
+        let random_file_name = generate_id();
+        // initialize database
+        let intialized_database = initialize_database(TEST_DB_PATH_WITHOUT_FILE_NAME, random_file_name.as_str()).await;
+
+    }
 }
 
 

@@ -133,8 +133,8 @@ Parser tests
         let json = r#"{
             "id": "test_id",
             "to_updated": "2018-01-01T19:20:30.45+01:00",
-            "to_store_id": "store_id",
-            "to_store_info": "store_info",
+            "to_store_url": "store_url_value",
+            "to_store_info": "store_info_value",
             "values": [
                 ["key1", "value1"],
                 ["key2", "value2"]
@@ -146,7 +146,7 @@ Parser tests
         assert_eq!(to_ticket.values.get("key1").unwrap(), "value1");
         assert_eq!(to_ticket.values.get("key2").unwrap(), "value2");
         assert_eq!(to_ticket.to_updated.num_days_from_ce(), Utc.ymd(2018, 1, 1).num_days_from_ce());
-        assert_eq!(to_ticket.to_store_url, Some("store_id".to_string()));
-        assert_eq!(to_ticket.to_store_info, Some("store_info".to_string()));
+        assert_eq!(to_ticket.to_store_url, Some("store_url_value".to_string()));
+        assert_eq!(to_ticket.to_store_info, Some("store_info_value".to_string()));
     }
 }
