@@ -1,4 +1,4 @@
-use regex::{Captures};
+use regex::Captures;
 use serde::{Deserialize, Serialize};
 
 // struct for recognition the regex match position: line, column, length

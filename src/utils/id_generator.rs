@@ -8,6 +8,7 @@ pub fn generate_id() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn test_generate_id() {
         let id = generate_id();

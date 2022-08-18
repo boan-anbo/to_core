@@ -1,7 +1,8 @@
 use regex::{escape, Regex};
+
+use crate::to_ticket::parser::parser_option::ParserOption;
 use crate::to_ticket::to_ticket_position::ToTicketInTextPosition;
 use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
-use crate::to_ticket::parser::parser_option::ParserOption;
 
 /*
 Parse all to ticket markers in a text and return a list of TextualObjectTicket.

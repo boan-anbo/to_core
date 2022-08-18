@@ -1,11 +1,14 @@
-use sqlx::{Error, Pool, Row, Sqlite};
+use std::borrow::BorrowMut;
+
+use sqlx::{Connection, Error, Pool, Row, Sqlite, SqliteConnection};
+use sqlx::pool::PoolConnection;
 use sqlx::sqlite::{SqliteQueryResult, SqliteRow};
 use uuid::Uuid;
 
 use crate::to::textual_object::TextualObject;
 
 // store textual object into database
-pub(crate) async fn insert_to(pool: &Pool<Sqlite>, textual_object: &TextualObject) -> Uuid {
+pub(crate) async fn insert_to(pool: &mut PoolConnection<Sqlite>, textual_object: &TextualObject) -> Uuid {
     let _id = textual_object.id.to_string();
     // insert textual object into database
     let insert_query = sqlx::query!(
@@ -39,18 +42,18 @@ pub(crate) async fn insert_to(pool: &Pool<Sqlite>, textual_object: &TextualObjec
 }
 
 // read textual object from database
-pub(crate) async fn find_to_by_id(pool: &Pool<Sqlite>, id: &Uuid) -> Option<TextualObject> {
+pub(crate) async fn find_to_by_id(conn: &mut PoolConnection<Sqlite>, id: &Uuid) -> Option<TextualObject> {
     let textual_object_row = sqlx::query(
         "SELECT * FROM textual_objects WHERE id = $1",
     )
         .bind(id)
-        .fetch_one(pool)
+        .fetch_one(conn)
         .await;
     load_sqlite_row_to_textual_object(textual_object_row)
 }
 
 // find to by ticket id
-pub(crate) async fn find_to_by_ticket_id(pool: &Pool<Sqlite>, ticket_id: &str) -> Option<TextualObject> {
+pub(crate) async fn find_to_by_ticket_id(pool: &mut PoolConnection<Sqlite>, ticket_id: &str) -> Option<TextualObject> {
     let textual_object_rows = sqlx::query(
         "SELECT * FROM textual_objects WHERE ticket_id = $1",
     )
@@ -62,13 +65,11 @@ pub(crate) async fn find_to_by_ticket_id(pool: &Pool<Sqlite>, ticket_id: &str) -
 
 
 // count the number of textual objects in the database
-pub(crate) async fn count_textual_objects(pool: &Pool<Sqlite>) -> i64 {
-    let count = sqlx::query("SELECT COUNT(*) FROM textual_objects")
-        .fetch_one(pool)
-        .await
-        .unwrap()
-        .get(0);
-    count
+pub(crate) async fn count_textual_objects(mut pool: PoolConnection<Sqlite>) -> i64 {
+    let count_query = sqlx::query("SELECT COUNT(*) FROM textual_objects");
+    let count = count_query.fetch_one(pool.borrow_mut()).await.unwrap();
+    count.get(0)
+
 }
 
 // load multiple sqlite rows to textual objecs
@@ -114,6 +115,7 @@ fn load_sqlite_row_to_textual_object(textual_object_row: Result<SqliteRow, Error
                 updated: textual_object_row.get("updated"),
                 json: textual_object_row.get("json"),
             };
+
             Some(textual_object)
         }
         Err(_e) => {
@@ -135,7 +137,7 @@ pub(crate) async fn delete_to_by_id(pool: &Pool<Sqlite>, id: &Uuid) -> SqliteQue
 }
 
 // delete textual object from database by ticket id
-pub(crate) async fn delete_to_by_ticket_id(pool: &Pool<Sqlite>, ticket_id: &String) -> SqliteQueryResult {
+pub(crate) async fn delete_to_by_ticket_id(pool: &mut PoolConnection<Sqlite>, ticket_id: &String) -> SqliteQueryResult {
     let delete_query = sqlx::query("DELETE FROM textual_objects WHERE ticket_id = $1")
         .bind(ticket_id)
         .execute(pool)
