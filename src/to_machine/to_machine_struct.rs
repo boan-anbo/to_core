@@ -19,13 +19,14 @@ pub struct TextualObjectMachine {
     // store type
     pub(crate) store_type: StoreType,
     // store path, that implements Copy
-    pub(crate) store_path: String,
+    pub(crate) store_url: String,
+    // store info that describe what this store does
+    pub(crate) store_info: String,
     // number of tos in the store, read only for the outside world
     pub(crate) to_count: i64,
 
     // pool
     pub(crate) pool: Option<Pool<Sqlite>>,
-
 }
 
 
@@ -42,7 +43,7 @@ impl TextualObjectMachine {
         }
 
         if !path.is_dir() {
-            panic!("store_directory is a path to a file, not a path to a directory; if you want to specify a name, use ToMahineOption");
+            panic!("{} is a path to a file, not a path to a directory", store_directory);
         }
 
 
@@ -65,7 +66,8 @@ impl TextualObjectMachine {
         // instantiate an temporary object
         let mut tom = TextualObjectMachine {
             store_type,
-            store_path: String::new(),
+            store_url: String::new(),
+            store_info: String::new(),
             to_count,
             pool: None,
         };
@@ -86,7 +88,7 @@ impl TextualObjectMachine {
                 if re.is_err() {
                     panic!("Check file conflict: cannot initialize database at {}", join_db_path(store_directory, &store_file_name));
                 } else {
-                    tom.store_path = re.unwrap();
+                    tom.store_url = re.unwrap();
                 }
                 // get count of tos in the store
             }
@@ -104,7 +106,7 @@ impl TextualObjectMachine {
         self.store_type
     }
     pub fn get_store_path(&self) -> String {
-        self.store_path.clone()
+        self.store_url.clone()
     }
     pub fn get_to_count(&self) -> i64 {
         self.to_count
@@ -119,10 +121,10 @@ impl TextualObjectMachine {
     pub(crate) async fn get_pool(&mut self) -> PoolConnection<Sqlite> {
         // check if TOM has a pool, if not, create a new one
         if self.pool.is_none() {
-            self.pool = Some(connect_to_database(&self.store_path).await);
+            self.pool = Some(connect_to_database(&self.store_url).await);
         }
         if self.pool.as_ref().unwrap().is_closed() {
-            self.pool = Some(connect_to_database(&self.store_path).await);
+            self.pool = Some(connect_to_database(&self.store_url).await);
         }
        let result = self.pool.as_ref().as_mut().unwrap().acquire().await;
        match result {

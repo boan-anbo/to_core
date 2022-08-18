@@ -11,9 +11,9 @@ impl TextualObjectMachine {
         if !self.pool.as_ref().unwrap().is_closed() {
             panic!("Pool is not closed");
         }
-        let drop_result = drop_database(self.store_path.as_str()).await;
+        let drop_result = drop_database(self.store_url.as_str()).await;
         if drop_result.is_err() {
-            panic!("Cannot drop database at {}", self.store_path);
+            panic!("Cannot drop database at {}", self.store_url);
         }
     }
 
