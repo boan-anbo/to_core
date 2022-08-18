@@ -7,6 +7,9 @@ pub struct ToMachineOption {
     // specify a name for the store, rather than the default name: _to_store.db
     pub store_file_name: Option<String>,
 
+    // specify store information, describing what the store does
+    pub store_info: Option<String>,
+
     // store type
     pub store_type: StoreType,
 }
@@ -17,6 +20,7 @@ impl Default for ToMachineOption {
         ToMachineOption {
             use_random_file_name: false,
             store_file_name: None,
+            store_info: Some("A TO Store".to_string()),
             store_type: StoreType::SQLITE
         }
     }

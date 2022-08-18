@@ -17,6 +17,8 @@ impl TextualObjectMachine {
         self.set_to_count(count);
         self.to_count
     }
+    
+    // add from 
 
     pub async fn add_textual_object(&mut self, textual_object: &TextualObject) -> Uuid {
         let mut pool = self.get_pool().await;
