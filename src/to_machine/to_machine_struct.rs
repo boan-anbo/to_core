@@ -11,9 +11,10 @@ use sqlx::pool::PoolConnection;
 use crate::db::db_op::{connect_to_database, initialize_database, join_db_path};
 use crate::db::to_db_op::count_textual_objects;
 use crate::enums::store_type::StoreType;
-use crate::to::to_dto::TextualObjectAddManyDto;
+use crate::to::to_dto::{TextualObjectAddManyDto, TextualObjectFindRequestDto, TextualObjectFindResultDto};
 use crate::to_machine::to_machine_option::ToMachineOption;
 use crate::utils::id_generator::generate_id;
+use crate::utils::split_store_path::split_store_path;
 
 #[derive(Debug, Clone)]
 pub struct TextualObjectMachine {
@@ -101,14 +102,29 @@ impl TextualObjectMachine {
     }
 
     // initialize ToM from TextualObjectAddManyDto
-    pub async fn new_from_dto(dto: &TextualObjectAddManyDto) -> Self {
+    pub async fn new_from_add_dto(dto: &TextualObjectAddManyDto) -> Self {
         TextualObjectMachine::new(&dto.store_dir, StoreType::SQLITE, Some(ToMachineOption {
             store_info: dto.store_info.clone(),
             use_random_file_name: false,
             store_file_name: dto.store_filename.clone(),
             ..Default::default()
         })).await
+    }
 
+    // initialize ToM from TextualObjectFindRequestDto
+    pub async fn new_from_find_dto(dto: &TextualObjectFindRequestDto) -> TextualObjectFindResultDto {
+        // check if store_full_path is provided, if not, use dir and filename
+
+        let (dir, filename) = split_store_path(&dto.store_url);
+
+        let mut tom = TextualObjectMachine::new(&dir, StoreType::SQLITE, Some(ToMachineOption {
+            use_random_file_name: false,
+            store_file_name: Some(filename),
+            ..Default::default()
+        })).await;
+
+        let result = tom.find_tos_by_ticket_ids(dto).await;
+        result
     }
 }
 
