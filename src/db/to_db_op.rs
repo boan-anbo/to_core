@@ -5,7 +5,7 @@ use sqlx::pool::PoolConnection;
 use sqlx::sqlite::{SqliteQueryResult, SqliteRow};
 use uuid::Uuid;
 
-use crate::to::textual_object::TextualObject;
+use crate::to::to_struct::TextualObject;
 
 // store textual object into database
 pub(crate) async fn insert_to(pool: &mut PoolConnection<Sqlite>, textual_object: &TextualObject) -> Uuid {
@@ -22,8 +22,11 @@ pub(crate) async fn insert_to(pool: &mut PoolConnection<Sqlite>, textual_object:
         store_url,
         created,
         updated,
-        json)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+        json,
+        card,
+        card_map
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
         textual_object.id,
         textual_object.ticket_id,
         textual_object.source_id,
@@ -34,11 +37,12 @@ pub(crate) async fn insert_to(pool: &mut PoolConnection<Sqlite>, textual_object:
         textual_object.store_url,
         textual_object.created,
         textual_object.updated,
-        textual_object.json
+        textual_object.json,
+        textual_object.card,
+        textual_object.card_map
     );
     insert_query.execute(pool).await.unwrap();
     textual_object.id
-
 }
 
 // read textual object from database
@@ -63,13 +67,25 @@ pub(crate) async fn find_to_by_ticket_id(pool: &mut PoolConnection<Sqlite>, tick
     load_sqlite_row_to_textual_object(textual_object_rows)
 }
 
+// check if there is any row with the given ticket id
+pub(crate) async fn check_if_ticket_id_exists(pool: &mut PoolConnection<Sqlite>, ticket_id: &str) -> bool {
+    let textual_object_rows = sqlx::query(
+        "SELECT * FROM textual_objects WHERE ticket_id = $1",
+    )
+        .bind(ticket_id)
+        .fetch_one(pool)
+        .await;
+    match textual_object_rows {
+        Ok(s) => true,
+        Err(e) => false,
+    }
+}
 
 // count the number of textual objects in the database
 pub(crate) async fn count_textual_objects(mut pool: PoolConnection<Sqlite>) -> i64 {
     let count_query = sqlx::query("SELECT COUNT(*) FROM textual_objects");
     let count = count_query.fetch_one(pool.borrow_mut()).await.unwrap();
     count.get(0)
-
 }
 
 // load multiple sqlite rows to textual objecs
@@ -114,6 +130,8 @@ fn load_sqlite_row_to_textual_object(textual_object_row: Result<SqliteRow, Error
                 created: textual_object_row.get("created"),
                 updated: textual_object_row.get("updated"),
                 json: textual_object_row.get("json"),
+                card: textual_object_row.get("card"),
+                card_map: textual_object_row.get("card_map"),
             };
 
             Some(textual_object)
@@ -123,7 +141,6 @@ fn load_sqlite_row_to_textual_object(textual_object_row: Result<SqliteRow, Error
         }
     }
 }
-
 
 
 // delete textual object from database by id

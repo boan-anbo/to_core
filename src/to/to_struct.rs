@@ -1,7 +1,10 @@
+use std::collections::HashMap;
 use chrono::{FixedOffset, TimeZone, Utc};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+use sqlx::types::Json;
 use uuid::Uuid;
+use crate::to_card::to_card_struct::TextualObjectCard;
 
 use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
 use crate::utils::id_generator::generate_id;
@@ -30,6 +33,53 @@ pub struct TextualObject {
     pub updated: chrono::NaiveDateTime,
 
     pub json: sqlx::types::Json<serde_json::Value>,
+
+    pub card: sqlx::types::Json<TextualObjectCard>,
+
+    // map of string to string, format: "to_key1, card_key1; to_key2, card_key2;" etc.
+    pub card_map: String,
+}
+
+// implement default values for textual object
+impl Default for TextualObject {
+    fn default() -> Self {
+        TextualObject {
+            id: Uuid::new_v4(),
+            ticket_id: generate_id(),
+            source_id: String::new(),
+            source_name: String::new(),
+            source_id_type: String::new(),
+            source_path: String::new(),
+            store_info: String::new(),
+            store_url: String::new(),
+            created: Utc::now().naive_utc(),
+            updated: Utc::now().naive_utc(),
+            json: sqlx::types::Json(serde_json::Value::Null),
+            card: sqlx::types::Json(TextualObjectCard::default()),
+            card_map: String::new(),
+        }
+    }
+}
+
+// default with uuid
+impl TextualObject {
+    pub fn default_with_uuid(uuid: Uuid) -> Self {
+        TextualObject {
+            id: uuid,
+            ticket_id: generate_id(),
+            source_id: String::new(),
+            source_name: String::new(),
+            source_id_type: String::new(),
+            source_path: String::new(),
+            store_info: String::new(),
+            store_url: String::new(),
+            created: Utc::now().naive_utc(),
+            updated: Utc::now().naive_utc(),
+            json: sqlx::types::Json(serde_json::Value::Null),
+            card: sqlx::types::Json(TextualObjectCard::default()),
+            card_map: String::new(),
+        }
+    }
 }
 
 // implement a factory method to create sample textual object for testing and seeding the database
@@ -49,7 +99,7 @@ impl TextualObject {
                 "test_array": [1, 2, 3],
             }
         });
-        TextualObject {
+        let to = TextualObject {
             id: Uuid::new_v4(),
             ticket_id: generate_id(),
             source_id: "source_id_value".to_string(),
@@ -60,8 +110,15 @@ impl TextualObject {
             store_url: "store_url_value".to_string(),
             created: Utc::now().naive_utc(),
             updated: Utc::now().naive_utc(),
+            card: sqlx::types::Json(TextualObjectCard::default()),
+            card_map: String::new(),
             json: sqlx::types::Json(json),
-        }
+        };
+
+        let test = 1;
+        let test1 = 2;
+        to
+
     }
 }
 
