@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::to::to_struct::TextualObject;
 use crate::to_card::to_card_struct::TextualObjectCard;
+use crate::to_ticket::to_ticket_utils::print_minimal_ticket;
 use crate::utils::get_random_test_database_dir::get_random_test_database_dir;
 use crate::utils::id_generator::generate_id;
 
@@ -110,6 +111,7 @@ impl TextualObjectAddDto {
 impl From<TextualObjectAddDto> for TextualObject {
     fn from(dto: TextualObjectAddDto) -> Self {
 
+        let ticket_id = generate_id();
         // create a new textual object, ready to persist to the database
         let mut to = TextualObject {
             id: Uuid::new_v4(),
@@ -123,8 +125,8 @@ impl From<TextualObjectAddDto> for TextualObject {
             // this will come from the receipt.
             store_info: "".to_string(),
 
-            ticket_id: generate_id(),
-            ticket_minimal: "".to_string(),
+            ticket_id: ticket_id.clone(),
+            ticket_minimal: print_minimal_ticket(&ticket_id, None),
 
             created: Utc::now().naive_utc(),
             updated: Utc::now().naive_utc(),

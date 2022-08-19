@@ -5,6 +5,7 @@ use uuid::Uuid;
 
 use crate::to_card::to_card_struct::TextualObjectCard;
 use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
+use crate::to_ticket::to_ticket_utils::print_minimal_ticket;
 use crate::utils::id_generator::generate_id;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -42,10 +43,11 @@ pub struct TextualObject {
 // implement default values for textual object
 impl Default for TextualObject {
     fn default() -> Self {
-        let mut to = TextualObject {
+        let ticket_id = generate_id();
+        TextualObject {
             id: Uuid::new_v4(),
-            ticket_id: generate_id(),
-            ticket_minimal: String::new(),
+            ticket_id: ticket_id.clone(),
+            ticket_minimal: print_minimal_ticket(&ticket_id, None),
             source_id: String::new(),
             source_name: String::new(),
             source_id_type: String::new(),
@@ -57,8 +59,7 @@ impl Default for TextualObject {
             json: sqlx::types::Json(serde_json::Value::Null),
             card: sqlx::types::Json(TextualObjectCard::default()),
             card_map: String::new(),
-        };
-        to.update_minimal_ticket()
+        }
     }
 }
 
@@ -66,10 +67,11 @@ impl Default for TextualObject {
 // default with uuid
 impl TextualObject {
     pub fn default_with_uuid(uuid: Uuid) -> Self {
-        let mut to = TextualObject {
+        let ticket_id = generate_id();
+        TextualObject {
             id: uuid,
-            ticket_id: generate_id(),
-            ticket_minimal: String::new(),
+            ticket_id: ticket_id.clone(),
+            ticket_minimal: print_minimal_ticket(&ticket_id, None),
             source_id: String::new(),
             source_name: String::new(),
             source_id_type: String::new(),
@@ -81,8 +83,7 @@ impl TextualObject {
             json: sqlx::types::Json(serde_json::Value::Null),
             card: sqlx::types::Json(TextualObjectCard::default()),
             card_map: String::new(),
-        };
-        to.update_minimal_ticket()
+        }
     }
 }
 
@@ -103,10 +104,8 @@ impl TextualObject {
                 "test_array": [1, 2, 3],
             }
         });
-        let to = TextualObject::get_sample();
-
-        let _test = 1;
-        let _test1 = 2;
+        let mut to = TextualObject::default();
+        to.json = sqlx::types::Json(_json);
         to
 
     }
@@ -126,15 +125,16 @@ impl From<TextualObject> for TextualObjectTicket {
         let store_url = if !textual_object.store_url.is_empty()  {
             Some(textual_object.store_url.clone())
         } else {
-            None
+            Some(String::new())
         };
         let store_info = if !textual_object.store_info.is_empty() {
             Some(textual_object.store_info.clone())
         } else {
-            None
+            Some(String::new())
         };
         TextualObjectTicket {
-            id: textual_object.ticket_id.clone(),
+            id: String::new(),
+            ticket_id: textual_object.ticket_id.clone(),
             values: index_map,
             to_updated: FixedOffset::east(0).timestamp(textual_object.updated.timestamp(), 0),
             to_store_url: store_url,
@@ -164,7 +164,7 @@ mod test {
     fn textual_object_from_textual_object_ticket_test() {
         let sample_textual_object = super::TextualObject::get_sample();
         let textual_object_ticket = TextualObjectTicket::from(sample_textual_object.clone());
-        assert_eq!(&textual_object_ticket.id, &sample_textual_object.ticket_id);
+        assert_eq!(&textual_object_ticket.ticket_id, &sample_textual_object.ticket_id);
         assert_eq!(textual_object_ticket.to_store_info.as_ref().unwrap(), &sample_textual_object.store_info);
         assert_eq!(textual_object_ticket.to_store_url.as_ref().unwrap(), &sample_textual_object.store_url);
 

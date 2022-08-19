@@ -312,13 +312,6 @@ mod tests {
         let _pool = connect_to_database(db_path).await;
     }
 
-    // test reset with seeded database
-    #[tokio::test]
-    async fn reset_database_with_random_data_test() {
-        let db_path = DB_PATH_WITH_FILE_NAME;
-        // reset database
-        reset_database_with_random_data(db_path).await;
-    }
 
     // test initializing database
     #[tokio::test]
@@ -331,7 +324,7 @@ mod tests {
     #[tokio::test]
     async fn remove_all_test_databases() {
         let path = TEST_DB_PATH_WITHOUT_FILE_NAME;
-        let mut directory = PathBuf::from(path);
+        let directory = PathBuf::from(path);
         // remove all files from the directory
         fs::remove_dir_all(directory).unwrap();
     }
