@@ -5,13 +5,12 @@ This is the Rust version.
 
 use std::path::PathBuf;
 
-use sqlx::{Error, Pool, Sqlite, SqliteConnection};
+use sqlx::{Pool, Sqlite};
 use sqlx::pool::PoolConnection;
 
 use crate::db::db_op::{connect_to_database, initialize_database, join_db_path};
-use crate::db::to_db_op::count_textual_objects;
 use crate::enums::store_type::StoreType;
-use crate::to::to_dto::{TextualObjectAddManyDto, TextualObjectFindRequestDto, TextualObjectFindResultDto};
+use crate::to::to_dto::{TextualObjectAddManyDto, TextualObjectFindRequestDto};
 use crate::to_machine::to_machine_option::ToMachineOption;
 use crate::utils::id_generator::generate_id;
 use crate::utils::split_store_path::split_store_path;
@@ -36,7 +35,7 @@ pub struct TextualObjectMachine {
 impl TextualObjectMachine {
     pub async fn new(store_directory: &str, store_type: StoreType, input_opt: Option<ToMachineOption>) -> Self {
         // check if store_directory is a path to a directory, not a path to a file
-        let mut path = PathBuf::from(store_directory);
+        let path = PathBuf::from(store_directory);
 
         // check if path exists
         if !path.exists() {
@@ -49,7 +48,7 @@ impl TextualObjectMachine {
         }
 
 
-        let mut to_count = 0;
+        let to_count = 0;
 
 
         // check if the opt.store_file_name is specified, defaults to _to_store.db
@@ -155,7 +154,7 @@ impl TextualObjectMachine {
         let result = self.pool.as_ref().as_mut().unwrap().acquire().await;
         match result {
             Ok(conn) => conn,
-            Err(e) => {
+            Err(_e) => {
                 panic!("Cannot get connection from pool: ");
             }
         }

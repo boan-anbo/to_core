@@ -1,8 +1,8 @@
 // test groups
 #[cfg(test)]
 mod test {
-    use std::borrow::{Borrow, BorrowMut};
     use std::{env, fs};
+    use std::borrow::{Borrow, BorrowMut};
     use std::path::PathBuf;
 
     use chrono::Utc;
@@ -37,21 +37,7 @@ mod test {
         // create database
         let random_database = get_random_database().await;
         // create textual object
-        let textual_object = TextualObject {
-            id: Uuid::new_v4(),
-            ticket_id: generate_id(),
-            source_id: "source_id".to_string(),
-            source_id_type: "test".to_string(),
-            source_path: "test".to_string(),
-            store_info: "test".to_string(),
-            store_url: "test".to_string(),
-            source_name: "test".to_string(),
-            created: Utc::now().naive_utc(),
-            updated: Utc::now().naive_utc(),
-            json: sqlx::types::Json(Value::Null),
-            card: sqlx::types::Json(TextualObjectCard::default()),
-            card_map: "test".to_string(),
-        };
+        let textual_object = TextualObject::get_sample();
         // write textual object to database
         // get pool
         let pool = connect_to_database(&random_database).await;

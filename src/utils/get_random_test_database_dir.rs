@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use crate::utils::id_generator::generate_id;
 
 // save env DATABASE_URL in .env file to static variable
 pub fn get_random_test_database_dir() -> String {

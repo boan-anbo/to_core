@@ -1,13 +1,15 @@
 use std::collections::HashMap;
+
 use chrono::Utc;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
+
 use crate::to::to_struct::TextualObject;
 use crate::to_card::to_card_struct::TextualObjectCard;
 use crate::utils::get_random_test_database_dir::get_random_test_database_dir;
 use crate::utils::id_generator::generate_id;
-use utoipa::{ToSchema};
 
 #[derive(Clone, Debug, Serialize, ToSchema, Deserialize)]
 pub struct TextualObjectStoredReceipt {
@@ -109,7 +111,7 @@ impl From<TextualObjectAddDto> for TextualObject {
     fn from(dto: TextualObjectAddDto) -> Self {
 
         // create a new textual object, ready to persist to the database
-        TextualObject {
+        let mut to = TextualObject {
             id: Uuid::new_v4(),
 
             source_id: dto.source_id,
@@ -122,6 +124,7 @@ impl From<TextualObjectAddDto> for TextualObject {
             store_info: "".to_string(),
 
             ticket_id: generate_id(),
+            ticket_minimal: "".to_string(),
 
             created: Utc::now().naive_utc(),
             updated: Utc::now().naive_utc(),
@@ -130,7 +133,8 @@ impl From<TextualObjectAddDto> for TextualObject {
             card: sqlx::types::Json(TextualObjectCard::default()),
 
             json: sqlx::types::Json(dto.json),
-        }
+        };
+        to.update_minimal_ticket()
     }
 }
 

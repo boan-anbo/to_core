@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS textual_objects
 (
     id PRIMARY KEY                    NOT NULL,
     ticket_id      TEXT               NOT NULL,
+    ticket_minimal TEXT  DEFAULT ''   NOT NULL,
 
     source_id      TEXT               NOT NULL,
     source_name    TEXT  DEFAULT ''   NOT NULL,

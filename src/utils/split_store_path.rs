@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 // separate full path into dir and filename
 pub(crate) fn split_store_path(store_path: &str) -> (String, String) {
-    let mut path = PathBuf::from(store_path);
+    let path = PathBuf::from(store_path);
     let dir = path.parent().unwrap().to_str().unwrap().to_string();
     let filename = path.file_name().unwrap().to_str().unwrap().to_string();
     (dir, filename)
@@ -12,6 +12,7 @@ pub(crate) fn split_store_path(store_path: &str) -> (String, String) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn test_split_store_path() {
         let (dir, filename) = split_store_path("/home/user/test.db");
