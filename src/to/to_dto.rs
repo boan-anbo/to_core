@@ -1,8 +1,10 @@
+use std::collections::HashMap;
 use chrono::Utc;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::to::textual_object::TextualObject;
+use crate::to::to_struct::TextualObject;
+use crate::to_card::to_card_struct::TextualObjectCard;
 use crate::utils::get_random_test_database_dir::get_random_test_database_dir;
 use crate::utils::id_generator::generate_id;
 
@@ -44,7 +46,7 @@ pub struct TextualObjectAddManyDto {
     pub overwrite: bool,
     pub store_info: Option<String>,
     pub store_dir: String,
-    pub store_filename: Option<String>
+    pub store_filename: Option<String>,
 }
 
 impl TextualObjectAddManyDto {
@@ -52,15 +54,14 @@ impl TextualObjectAddManyDto {
         let mut sample_dto = TextualObjectAddManyDto {
             tos: IndexMap::new(),
             overwrite: false,
-            store_info: None,
+            store_info: Some("Random Store Info".to_string()),
             store_dir: get_random_test_database_dir().to_string(),
-            store_filename: None
+            store_filename: None,
         };
         for _ in 0..10 {
-            sample_dto.tos.insert(generate_id(), TextualObjectAddDto::sample() );
+            sample_dto.tos.insert(generate_id(), TextualObjectAddDto::sample());
         };
         sample_dto
-
     }
 }
 
@@ -125,6 +126,9 @@ impl From<TextualObjectAddDto> for TextualObject {
             created: Utc::now().naive_utc(),
             updated: Utc::now().naive_utc(),
 
+            card_map: String::new(),
+            card: sqlx::types::Json(TextualObjectCard::default()),
+
             json: sqlx::types::Json(dto.json),
         }
     }
@@ -166,8 +170,6 @@ mod test {
         assert_eq!(textual_object.source_id_type, "source_id_type_value");
         assert_eq!(textual_object.source_path, "source_path_value");
         assert_eq!(textual_object.source_name, "source_name_value");
-        assert_eq!(textual_object.store_url, "store_url_value");
-        assert_eq!(textual_object.ticket_id, "ticket_id_value");
         assert_eq!(textual_object.store_info, String::from(""));
     }
 }

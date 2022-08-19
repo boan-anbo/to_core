@@ -7,6 +7,7 @@ pub mod to_ticket;
 pub mod enums;
 pub mod to;
 pub mod db;
+pub mod to_card;
 
 #[cfg(test)]
 mod tests {

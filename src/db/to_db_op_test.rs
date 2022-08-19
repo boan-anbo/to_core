@@ -12,8 +12,9 @@ mod test {
     use uuid::Uuid;
 
     use crate::db::db_op::{connect_to_database, initialize_database, reset_database};
-    use crate::db::to_db_op::{find_to_by_id, find_to_by_ticket_id, insert_to};
-    use crate::to::textual_object::TextualObject;
+    use crate::db::to_db_op::{check_if_ticket_id_exists, delete_to_by_ticket_id, find_to_by_id, find_to_by_ticket_id, insert_to};
+    use crate::to::to_struct::TextualObject;
+    use crate::to_card::to_card_struct::TextualObjectCard;
     use crate::utils::id_generator::generate_id;
 
     // save env DATABASE_URL in .env file to static variable
@@ -48,6 +49,8 @@ mod test {
             created: Utc::now().naive_utc(),
             updated: Utc::now().naive_utc(),
             json: sqlx::types::Json(Value::Null),
+            card: sqlx::types::Json(TextualObjectCard::default()),
+            card_map: "test".to_string(),
         };
         // write textual object to database
         // get pool
@@ -73,23 +76,8 @@ mod test {
             "number_key": 1,
             "boolean_key": true,
                 });
-        let textual_object_insert = TextualObject {
-            id: uuid,
-            ticket_id: generate_id(),
-
-            source_id: "source_id".to_string(),
-            source_id_type: "source_id_type".to_string(),
-            source_path: "source_path".to_string(),
-            source_name: "source_name".to_string(),
-
-            store_info: "store_info".to_string(),
-            store_url: "store_url".to_string(),
-
-            created: Utc::now().naive_utc(),
-            updated: Utc::now().naive_utc(),
-
-            json: sqlx::types::Json(json),
-        };
+        let mut textual_object_insert = TextualObject::default_with_uuid(uuid.clone());
+        textual_object_insert.json = sqlx::types::Json(json.clone());
         print!("{:?}", &uuid);
         let mut conn = pool.acquire().await.unwrap();
         // write textual object to database
@@ -99,7 +87,6 @@ mod test {
         let mut conn2 = pool.acquire().await.unwrap();
 
         let textual_object_read = find_to_by_id(conn2.borrow_mut(), &textual_object_insert.id).await.unwrap();
-
 
 
         // handle textual_object_read Result
@@ -142,19 +129,7 @@ mod test {
 
         // when result is one
         let to_insert_uuid = Uuid::new_v4();
-        let to_insert = TextualObject {
-            id: to_insert_uuid,
-            ticket_id: generate_id(),
-            source_id: "source_id".to_string(),
-            source_id_type: "test".to_string(),
-            source_path: "test".to_string(),
-            store_info: "test".to_string(),
-            store_url: "test".to_string(),
-            source_name: "test".to_string(),
-            created: Utc::now().naive_utc(),
-            updated: Utc::now().naive_utc(),
-            json: sqlx::types::Json(Value::Null),
-        };
+        let to_insert = TextualObject::default_with_uuid(to_insert_uuid.clone());
         let mut conn = pool.acquire().await.unwrap();
         let received_id = insert_to(conn.borrow_mut(), &to_insert).await;
         assert_eq!(received_id, to_insert_uuid);
@@ -179,25 +154,48 @@ mod test {
         assert!(textual_object_read.is_none());
 
         // when result is one
-        let ticket_id = generate_id();
-        let to_insert = TextualObject {
-            id: Uuid::new_v4(),
-            ticket_id: ticket_id.clone(),
-            source_id: "source_id".to_string(),
-            source_id_type: "test".to_string(),
-            source_path: "test".to_string(),
-            store_info: "test".to_string(),
-            store_url: "test".to_string(),
-            source_name: "test".to_string(),
-            created: Utc::now().naive_utc(),
-            updated: Utc::now().naive_utc(),
-            json: sqlx::types::Json(Value::Null),
-        };
+        let to_insert = TextualObject::default();
         let mut conn = pool.acquire().await.unwrap();
         let received_id = insert_to(conn.borrow_mut(), &to_insert).await;
         assert_eq!(received_id, to_insert.id);
-        let found_to = find_to_by_ticket_id(conn.borrow_mut(), &ticket_id).await;
+        let found_to = find_to_by_ticket_id(conn.borrow_mut(), &to_insert.ticket_id).await;
         assert!(found_to.is_some());
-        assert_eq!(found_to.unwrap().ticket_id, ticket_id);
+        assert_eq!(&found_to.unwrap().ticket_id, &to_insert.ticket_id);
+    }
+
+
+    // test check ticket id uniqueness
+    #[tokio::test]
+    async fn check_ticket_id_uniqueness_test() {
+        // create database
+        let random_database = get_random_database().await;
+
+        let pool = connect_to_database(&random_database).await;
+        // conn
+        let mut conn = pool.acquire().await.unwrap();
+        // when result is none
+        let ticket_id = generate_id();
+        let mut sample_to = TextualObject::get_sample();
+        sample_to.ticket_id = ticket_id.clone();
+
+        // when there is no ticket id
+        let check_one = check_if_ticket_id_exists(conn.borrow_mut(), &ticket_id).await;
+        assert_eq!(check_one, false);
+
+        // when there is a ticket id
+        insert_to(conn.borrow_mut(), &sample_to).await;
+        let check_two = check_if_ticket_id_exists(conn.borrow_mut(), &ticket_id).await;
+        // delete textual object from database
+        assert_eq!(check_two, true);
+
+        // try another ticket id
+        let ticket_id_two = generate_id();
+        let check_three = check_if_ticket_id_exists(conn.borrow_mut(), &ticket_id_two).await;
+        assert_eq!(check_three, false);
+
+        // remove the ticket id from the database
+        delete_to_by_ticket_id(conn.borrow_mut(), &ticket_id).await;
+        let check_four = check_if_ticket_id_exists(conn.borrow_mut(), &ticket_id).await;
+        assert_eq!(check_four, false);
     }
 }

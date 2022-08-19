@@ -1,6 +1,8 @@
 use std::borrow::BorrowMut;
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use indexmap::IndexMap;
 
 use rand::{distributions::Alphanumeric, Rng};
 use sqlx::{Pool, Row, Sqlite, SqliteConnection};
@@ -10,7 +12,8 @@ use sqlx::sqlite::SqlitePool;
 use uuid::Uuid;
 
 use crate::db::to_db_op::insert_to;
-use crate::to::textual_object::TextualObject;
+use crate::to::to_struct::TextualObject;
+use crate::to_card::to_card_struct::TextualObjectCard;
 use crate::utils::id_generator::generate_id;
 
 pub(crate) fn join_db_path(store_directory: &str, store_file_name: &str) -> String {
@@ -78,22 +81,26 @@ pub(crate) async fn create_empty_database_with_path_and_filename(root_path: &str
 async fn create_initial_table(pool: &Pool<Sqlite>) {
     // if not exists, create table `textual_objects`, with UUID as primary key, sid as text, source_name as text, and update date and modification date, and json field for JSONB
     sqlx::query!(
-        "CREATE TABLE IF NOT EXISTS textual_objects (
-    id              PRIMARY KEY NOT NULL,
-    ticket_id       TEXT NOT NULL,
+        "CREATE TABLE IF NOT EXISTS textual_objects
+        (
+            id PRIMARY KEY                    NOT NULL,
+            ticket_id      TEXT               NOT NULL,
 
-    source_id      TEXT NOT NULL,
-    source_name    TEXT DEFAULT '' NOT NULL,
-    source_id_type TEXT DEFAULT '' NOT NULL,
-    source_path    TEXT DEFAULT '' NOT NULL,
+            source_id      TEXT               NOT NULL,
+            source_name    TEXT  DEFAULT ''   NOT NULL,
+            source_id_type TEXT  DEFAULT ''   NOT NULL,
+            source_path    TEXT  DEFAULT ''   NOT NULL,
 
-    store_info     TEXT DEFAULT '' NOT NULL,
-    store_url      TEXT    DEFAULT '' NOT NULL,
+            store_info     TEXT  DEFAULT ''   NOT NULL,
+            store_url      TEXT  DEFAULT ''   NOT NULL,
 
-    created        TIMESTAMP NOT NULL ,
-    updated        TIMESTAMP NOT NULL ,
+            created        TIMESTAMP          NOT NULL,
+            updated        TIMESTAMP          NOT NULL,
 
-    json           JSONB DEFAULT '{}' NOT NULL
+            json           JSONB DEFAULT '{}' NOT NULL,
+
+            card           JSONB DEFAULT NULL,
+            card_map       TEXT  DEFAULT ''   NOT NULL
         )"
     )
         .execute(pool)
@@ -128,7 +135,6 @@ pub async fn drop_database(db_path: &str) -> Result<(), sqlx::Error> {
         Ok(_) => Ok(()),
         Err(e) => Err(e.into())
     }
-
 }
 
 // release database
@@ -169,6 +175,8 @@ async fn seed_random_data(pool: &mut PoolConnection<Sqlite>) {
             store_info: "store info".to_string(),
             store_url: "store url".to_string(),
             source_name: "test".to_string(),
+            card: sqlx::types::Json(TextualObjectCard::default()),
+            card_map: "".to_string(),
             created: chrono::NaiveDateTime::from_timestamp(0, 0),
             updated: chrono::NaiveDateTime::from_timestamp(0, 0),
 
@@ -272,7 +280,6 @@ mod tests {
                 panic!("database_exists is err: {:?}", e);
             }
         }
-
     }
 
 
@@ -334,6 +341,7 @@ mod tests {
         // initialize database
         let _intialized_database = initialize_database(TEST_DB_PATH_WITHOUT_FILE_NAME, random_file_name.as_str()).await;
     }
+
     #[tokio::test]
     async fn remove_all_test_databases() {
         let path = TEST_DB_PATH_WITHOUT_FILE_NAME;

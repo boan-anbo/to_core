@@ -5,9 +5,10 @@ use std::borrow::BorrowMut;
 use sqlx::Connection;
 use uuid::Uuid;
 
-use crate::db::to_db_op::{count_textual_objects, delete_to_by_ticket_id, find_to_by_ticket_id, insert_to};
-use crate::to::textual_object::TextualObject;
+use crate::db::to_db_op::{check_if_ticket_id_exists, count_textual_objects, delete_to_by_ticket_id, find_to_by_ticket_id, insert_to};
+use crate::to::to_struct::TextualObject;
 use crate::to_machine::to_machine_struct::TextualObjectMachine;
+use crate::utils::id_generator::generate_id;
 
 impl TextualObjectMachine {
     pub async fn update_to_count(&mut self) -> i64 {
@@ -17,7 +18,7 @@ impl TextualObjectMachine {
         self.set_to_count(count);
         self.to_count
     }
-    
+
     // add from 
 
     pub async fn add_textual_object(&mut self, textual_object: &TextualObject) -> Uuid {
@@ -64,6 +65,15 @@ impl TextualObjectMachine {
             false
         }
     }
+
+    pub async fn get_unique_ticket_id(&mut self) -> String {
+        let mut unique_ticket_id_to_try = generate_id();
+        let mut pool = self.get_pool().await;
+        while check_if_ticket_id_exists(pool.borrow_mut(), unique_ticket_id_to_try.as_str()).await {
+            unique_ticket_id_to_try = generate_id();
+        }
+        unique_ticket_id_to_try
+    }
 }
 
 // tests for TextualObjectMachine operation methods
@@ -75,9 +85,10 @@ mod test {
     use std::path::PathBuf;
 
     use crate::enums::store_type::StoreType;
-    use crate::to::textual_object::TextualObject;
+    use crate::to::to_struct::TextualObject;
     use crate::to_machine::to_machine_option::ToMachineOption;
     use crate::to_machine::to_machine_struct::TextualObjectMachine;
+    use crate::utils::get_random_test_database_dir::get_random_test_database_dir;
     use crate::utils::id_generator::generate_id;
 
     pub fn get_test_asset_path(file_name: &str) -> String {
@@ -206,5 +217,20 @@ mod test {
         assert_eq!(found_tos.len(), 3);
         // check if the textual objects are found
         assert_eq!(&found_tos[0].ticket_id, &sample_to1.ticket_id);
+    }
+
+    // test get unique ticket id
+    #[tokio::test]
+    async fn test_get_unique_ticket_id() {
+        let random_database_dir = get_random_test_database_dir();
+        // create a new TextualObjectMachineRs with SQLITE store
+        let mut tom = TextualObjectMachine::new(&random_database_dir, StoreType::SQLITE, Some(ToMachineOption{
+            use_random_file_name: true,
+            ..Default::default()
+        })).await;
+        // check if the machine is created
+        let unique_ticket_id = tom.get_unique_ticket_id().await;
+        // check if the ticket id is unique
+        assert_eq!(unique_ticket_id.len(), 5);
     }
 }

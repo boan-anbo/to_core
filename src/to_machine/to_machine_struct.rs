@@ -53,11 +53,11 @@ impl TextualObjectMachine {
         // check if the opt.store_file_name is specified, defaults to _to_store.db
         let mut store_file_name = "_to_store.db".to_string();
 
-        if let Some(opt) = input_opt {
+        if let Some(opt) = &input_opt {
             if opt.use_random_file_name {
                 store_file_name = generate_id();
             } else {
-                if let Some(store_file_name_opt) = opt.store_file_name {
+                if let Some(store_file_name_opt) = &opt.store_file_name {
                     store_file_name = store_file_name_opt.to_string();
                 }
             }
@@ -67,7 +67,7 @@ impl TextualObjectMachine {
         let mut tom = TextualObjectMachine {
             store_type,
             store_url: String::new(),
-            store_info: String::new(),
+            store_info: input_opt.unwrap_or(ToMachineOption::default()).store_info.clone().unwrap_or("".to_string()),
             to_count,
             pool: None,
         };
