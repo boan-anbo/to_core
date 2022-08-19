@@ -8,7 +8,7 @@ use crate::to_machine::to_machine_struct::TextualObjectMachine;
 These are methods mostly exposed to the ToApi, such batch adding dtos etc--why it's called public operation methods
  */
 impl TextualObjectMachine {
-    // add from
+    /// add from TextualObjectAddManyDto, main method for adding from dto
     pub async fn add_tos(&mut self, add_tos_dto: TextualObjectAddManyDto) -> TextualObjectStoredReceipt {
         // get pool
         let mut pool = self.get_pool().await;
