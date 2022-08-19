@@ -11,6 +11,7 @@ use sqlx::pool::PoolConnection;
 use crate::db::db_op::{connect_to_database, initialize_database, join_db_path};
 use crate::db::to_db_op::count_textual_objects;
 use crate::enums::store_type::StoreType;
+use crate::to::to_dto::TextualObjectAddManyDto;
 use crate::to_machine::to_machine_option::ToMachineOption;
 use crate::utils::id_generator::generate_id;
 
@@ -98,6 +99,17 @@ impl TextualObjectMachine {
         tom.update_to_count();
         tom
     }
+
+    // initialize ToM from TextualObjectAddManyDto
+    pub async fn new_from_dto(dto: TextualObjectAddManyDto) -> Self {
+        TextualObjectMachine::new(&dto.store_dir, StoreType::SQLITE, Some(ToMachineOption {
+            store_info: dto.store_info,
+            use_random_file_name: false,
+            store_file_name: dto.store_filename,
+            ..Default::default()
+        })).await
+
+    }
 }
 
 // implementing getters and setters for TextualObjectMachineRs
@@ -126,13 +138,13 @@ impl TextualObjectMachine {
         if self.pool.as_ref().unwrap().is_closed() {
             self.pool = Some(connect_to_database(&self.store_url).await);
         }
-       let result = self.pool.as_ref().as_mut().unwrap().acquire().await;
-       match result {
-              Ok(conn) =>conn,
-              Err(e) => {
-                  panic!("Cannot get connection from pool: ");
-              }
-       }
+        let result = self.pool.as_ref().as_mut().unwrap().acquire().await;
+        match result {
+            Ok(conn) => conn,
+            Err(e) => {
+                panic!("Cannot get connection from pool: ");
+            }
+        }
     }
 }
 
