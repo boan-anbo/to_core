@@ -101,11 +101,11 @@ impl TextualObjectMachine {
     }
 
     // initialize ToM from TextualObjectAddManyDto
-    pub async fn new_from_dto(dto: TextualObjectAddManyDto) -> Self {
+    pub async fn new_from_dto(dto: &TextualObjectAddManyDto) -> Self {
         TextualObjectMachine::new(&dto.store_dir, StoreType::SQLITE, Some(ToMachineOption {
-            store_info: dto.store_info,
+            store_info: dto.store_info.clone(),
             use_random_file_name: false,
-            store_file_name: dto.store_filename,
+            store_file_name: dto.store_filename.clone(),
             ..Default::default()
         })).await
 
