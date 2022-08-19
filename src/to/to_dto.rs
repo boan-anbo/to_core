@@ -41,7 +41,7 @@ impl From<TextualObjectAddManyDto> for TextualObjectStoredReceipt {
 pub struct TextualObjectAddManyDto {
     // list of textual objects to add, String is the unique source id.
     // this is so that the recept will provide a list of unique ids with stored textual objects.
-    pub tos: IndexMap<String, TextualObjectAddDto>,
+    pub tos: HashMap<String, TextualObjectAddDto>,
     // whether when there is an existing TO in the store with the same source_id, replace it with the new item.
     pub overwrite: bool,
     pub store_info: Option<String>,
@@ -52,7 +52,7 @@ pub struct TextualObjectAddManyDto {
 impl TextualObjectAddManyDto {
     pub fn sample() -> Self {
         let mut sample_dto = TextualObjectAddManyDto {
-            tos: IndexMap::new(),
+            tos: HashMap::new(),
             overwrite: false,
             store_info: Some("Random Store Info".to_string()),
             store_dir: get_random_test_database_dir().to_string(),
