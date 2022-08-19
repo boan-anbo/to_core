@@ -1,5 +1,3 @@
-extern crate core;
-
 pub mod entities;
 pub(crate) mod utils;
 pub mod to_machine;
@@ -9,11 +7,3 @@ pub mod to;
 pub mod db;
 pub mod to_card;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
