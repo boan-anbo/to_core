@@ -112,19 +112,17 @@ impl TextualObjectMachine {
     }
 
     // initialize ToM from TextualObjectFindRequestDto
-    pub async fn new_from_find_dto(dto: &TextualObjectFindRequestDto) -> TextualObjectFindResultDto {
+    pub async fn new_from_find_dto(dto: &TextualObjectFindRequestDto) -> Self {
         // check if store_full_path is provided, if not, use dir and filename
 
         let (dir, filename) = split_store_path(&dto.store_url);
 
-        let mut tom = TextualObjectMachine::new(&dir, StoreType::SQLITE, Some(ToMachineOption {
+        TextualObjectMachine::new(&dir, StoreType::SQLITE, Some(ToMachineOption {
             use_random_file_name: false,
             store_file_name: Some(filename),
             ..Default::default()
-        })).await;
+        })).await
 
-        let result = tom.find_tos_by_ticket_ids(dto).await;
-        result
     }
 }
 
