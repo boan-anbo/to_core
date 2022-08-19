@@ -138,6 +138,7 @@ impl From<TextualObjectAddDto> for TextualObject {
 #[derive(Clone, Debug, Serialize, ToSchema, Deserialize)]
 pub struct TextualObjectFindRequestDto {
     pub store_url: String,
+    // if this is provided, the store_filename and directory will be ignored.
     pub ticket_ids: Vec<String>
 }
 
