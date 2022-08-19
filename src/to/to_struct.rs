@@ -1,11 +1,9 @@
-use std::collections::HashMap;
 use chrono::{FixedOffset, TimeZone, Utc};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
-use sqlx::types::Json;
 use uuid::Uuid;
-use crate::to_card::to_card_struct::TextualObjectCard;
 
+use crate::to_card::to_card_struct::TextualObjectCard;
 use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
 use crate::utils::id_generator::generate_id;
 
@@ -15,6 +13,7 @@ pub struct TextualObject {
     // ticket id
     pub ticket_id: String,
     // unique identifier for the textual object in the original source, e.g. url for webpage, zotero citekey for zotero item, etc, doi for article, etc
+    pub ticket_minimal: String,
 
     pub source_id: String,
     // name of the source of the textual object, e.g. "Zotero", "DOI"
@@ -43,9 +42,10 @@ pub struct TextualObject {
 // implement default values for textual object
 impl Default for TextualObject {
     fn default() -> Self {
-        TextualObject {
+        let mut to = TextualObject {
             id: Uuid::new_v4(),
             ticket_id: generate_id(),
+            ticket_minimal: String::new(),
             source_id: String::new(),
             source_name: String::new(),
             source_id_type: String::new(),
@@ -57,16 +57,19 @@ impl Default for TextualObject {
             json: sqlx::types::Json(serde_json::Value::Null),
             card: sqlx::types::Json(TextualObjectCard::default()),
             card_map: String::new(),
-        }
+        };
+        to.update_minimal_ticket()
     }
 }
+
 
 // default with uuid
 impl TextualObject {
     pub fn default_with_uuid(uuid: Uuid) -> Self {
-        TextualObject {
+        let mut to = TextualObject {
             id: uuid,
             ticket_id: generate_id(),
+            ticket_minimal: String::new(),
             source_id: String::new(),
             source_name: String::new(),
             source_id_type: String::new(),
@@ -78,14 +81,15 @@ impl TextualObject {
             json: sqlx::types::Json(serde_json::Value::Null),
             card: sqlx::types::Json(TextualObjectCard::default()),
             card_map: String::new(),
-        }
+        };
+        to.update_minimal_ticket()
     }
 }
 
 // implement a factory method to create sample textual object for testing and seeding the database
 impl TextualObject {
     pub fn get_sample() -> TextualObject {
-        let json = serde_json::json!({
+        let _json = serde_json::json!({
             "test_string": "test_string_value",
             "test_number": 1,
             "test_boolean": true,
@@ -99,24 +103,10 @@ impl TextualObject {
                 "test_array": [1, 2, 3],
             }
         });
-        let to = TextualObject {
-            id: Uuid::new_v4(),
-            ticket_id: generate_id(),
-            source_id: "source_id_value".to_string(),
-            source_id_type: "source_id_type_value".to_string(),
-            source_path: "source_path_value".to_string(),
-            source_name: "source_name_value".to_string(),
-            store_info: "store_info_value".to_string(),
-            store_url: "store_url_value".to_string(),
-            created: Utc::now().naive_utc(),
-            updated: Utc::now().naive_utc(),
-            card: sqlx::types::Json(TextualObjectCard::default()),
-            card_map: String::new(),
-            json: sqlx::types::Json(json),
-        };
+        let to = TextualObject::get_sample();
 
-        let test = 1;
-        let test1 = 2;
+        let _test = 1;
+        let _test1 = 2;
         to
 
     }
@@ -126,7 +116,7 @@ impl TextualObject {
 impl From<TextualObject> for TextualObjectTicket {
     fn from(textual_object: TextualObject) -> TextualObjectTicket {
         // convert textual_object.json to IndexMap
-        let json = textual_object.json.0;
+        let json = &textual_object.json.0;
         let mut index_map: IndexMap<String, String> = IndexMap::new();
         for (key, value) in json.as_object().unwrap().iter() {
             index_map.insert(key.to_string(), value.to_string());
@@ -134,17 +124,17 @@ impl From<TextualObject> for TextualObjectTicket {
 
         // if length > 0, then assign the value
         let store_url = if !textual_object.store_url.is_empty()  {
-            Some(textual_object.store_url)
+            Some(textual_object.store_url.clone())
         } else {
             None
         };
         let store_info = if !textual_object.store_info.is_empty() {
-            Some(textual_object.store_info)
+            Some(textual_object.store_info.clone())
         } else {
             None
         };
         TextualObjectTicket {
-            id: textual_object.ticket_id,
+            id: textual_object.ticket_id.clone(),
             values: index_map,
             to_updated: FixedOffset::east(0).timestamp(textual_object.updated.timestamp(), 0),
             to_store_url: store_url,

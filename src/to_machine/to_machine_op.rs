@@ -2,7 +2,6 @@
 
 use std::borrow::BorrowMut;
 
-use sqlx::Connection;
 use uuid::Uuid;
 
 use crate::db::to_db_op::{check_if_ticket_id_exists, count_textual_objects, delete_to_by_ticket_id, find_to_by_ticket_id, insert_to};
@@ -12,7 +11,7 @@ use crate::utils::id_generator::generate_id;
 
 impl TextualObjectMachine {
     pub async fn update_to_count(&mut self) -> i64 {
-        let mut pool = self.get_pool().await;
+        let pool = self.get_pool().await;
 
         let count = count_textual_objects(pool).await;
         self.set_to_count(count);

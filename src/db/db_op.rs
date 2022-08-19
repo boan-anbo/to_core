@@ -1,20 +1,15 @@
 use std::borrow::BorrowMut;
-use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use indexmap::IndexMap;
 
 use rand::{distributions::Alphanumeric, Rng};
-use sqlx::{Pool, Row, Sqlite, SqliteConnection};
+use sqlx::{Pool, Row, Sqlite};
 use sqlx::migrate::MigrateDatabase;
 use sqlx::pool::PoolConnection;
 use sqlx::sqlite::SqlitePool;
-use uuid::Uuid;
 
 use crate::db::to_db_op::insert_to;
 use crate::to::to_struct::TextualObject;
-use crate::to_card::to_card_struct::TextualObjectCard;
-use crate::utils::id_generator::generate_id;
 
 pub(crate) fn join_db_path(store_directory: &str, store_file_name: &str) -> String {
     let mut path = PathBuf::new();
@@ -81,27 +76,29 @@ pub(crate) async fn create_empty_database_with_path_and_filename(root_path: &str
 async fn create_initial_table(pool: &Pool<Sqlite>) {
     // if not exists, create table `textual_objects`, with UUID as primary key, sid as text, source_name as text, and update date and modification date, and json field for JSONB
     sqlx::query!(
-        "CREATE TABLE IF NOT EXISTS textual_objects
-        (
-            id PRIMARY KEY                    NOT NULL,
-            ticket_id      TEXT               NOT NULL,
+     " CREATE TABLE IF NOT EXISTS textual_objects
+(
+    id PRIMARY KEY                    NOT NULL,
+    ticket_id      TEXT               NOT NULL,
+    ticket_minimal TEXT  DEFAULT ''   NOT NULL,
 
-            source_id      TEXT               NOT NULL,
-            source_name    TEXT  DEFAULT ''   NOT NULL,
-            source_id_type TEXT  DEFAULT ''   NOT NULL,
-            source_path    TEXT  DEFAULT ''   NOT NULL,
+    source_id      TEXT               NOT NULL,
+    source_name    TEXT  DEFAULT ''   NOT NULL,
+    source_id_type TEXT  DEFAULT ''   NOT NULL,
+    source_path    TEXT  DEFAULT ''   NOT NULL,
 
-            store_info     TEXT  DEFAULT ''   NOT NULL,
-            store_url      TEXT  DEFAULT ''   NOT NULL,
+    store_info     TEXT  DEFAULT ''   NOT NULL,
+    store_url      TEXT  DEFAULT ''   NOT NULL,
 
-            created        TIMESTAMP          NOT NULL,
-            updated        TIMESTAMP          NOT NULL,
+    created        TIMESTAMP          NOT NULL,
+    updated        TIMESTAMP          NOT NULL,
 
-            json           JSONB DEFAULT '{}' NOT NULL,
+    json           JSONB DEFAULT '{}' NOT NULL,
 
-            card           JSONB DEFAULT NULL,
-            card_map       TEXT  DEFAULT ''   NOT NULL
-        )"
+    card           JSONB DEFAULT NULL,
+    card_map       TEXT  DEFAULT ''   NOT NULL
+)"
+
     )
         .execute(pool)
         .await
@@ -166,22 +163,10 @@ async fn seed_random_data(pool: &mut PoolConnection<Sqlite>) {
         let sid_new_name: Vec<u8> = rng.sample_iter(&Alphanumeric).take(10).collect();
         sid = String::from_utf8(sid_new_name).unwrap();
 
-        let textual_object = TextualObject {
-            id: Uuid::new_v4(),
-            ticket_id: generate_id(),
-            source_id: sid.clone(),
-            source_id_type: "Zotero Citekey".to_string(),
-            source_path: "/path/to/file.txt".to_string(),
-            store_info: "store info".to_string(),
-            store_url: "store url".to_string(),
-            source_name: "test".to_string(),
-            card: sqlx::types::Json(TextualObjectCard::default()),
-            card_map: "".to_string(),
-            created: chrono::NaiveDateTime::from_timestamp(0, 0),
-            updated: chrono::NaiveDateTime::from_timestamp(0, 0),
+        let mut textual_object = TextualObject::get_sample();
 
-            json: sqlx::types::Json(
-                serde_json::json!({
+        textual_object.json = sqlx::types::Json(
+            serde_json::json!({
                         "test_string": "test_string_value",
                         "test_number": 1,
                         "test_boolean": true,
@@ -194,8 +179,7 @@ async fn seed_random_data(pool: &mut PoolConnection<Sqlite>) {
                             "test_null": null,
                             "test_array": [1, 2, 3],
                         }
-                    })),
-        };
+                    }));
         insert_to(pool, &textual_object).await;
     }
 }
@@ -215,6 +199,8 @@ async fn reset_database_with_random_data(db_path: &str) {
 // unit tests
 #[cfg(test)]
 mod tests {
+    use crate::utils::id_generator::generate_id;
+
     use super::*;
 
     static DB_PATH_WITH_FILE_NAME: &str = "resources/test/test_to_core.db";

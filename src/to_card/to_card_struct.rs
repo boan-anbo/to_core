@@ -1,7 +1,7 @@
-use chrono::{NaiveDateTime, Utc};
+use chrono::NaiveDateTime;
 use indexmap::IndexMap;
-use uuid::Uuid;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Person {

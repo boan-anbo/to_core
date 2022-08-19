@@ -8,6 +8,8 @@ pub struct ToTicketPrintOption {
     pub include_store_info: bool,
     // whether include store_id
     pub include_store_id: bool,
+    // this will overwrite other options and print only a ticket with a single ticket id field
+    pub minimal: bool,
 }
 
 // create default values for ToTicketPrintOption
@@ -19,6 +21,7 @@ impl Default for ToTicketPrintOption {
             include_created: true,
             include_store_info: true,
             include_store_id: true,
+            minimal: false,
         }
     }
 }

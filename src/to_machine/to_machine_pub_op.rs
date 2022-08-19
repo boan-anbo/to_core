@@ -1,9 +1,8 @@
 use std::collections::HashMap;
-use crate::enums::store_type::StoreType;
-use crate::to::to_struct::TextualObject;
-use crate::to::to_dto::{TextualObjectAddManyDto, TextualObjectFindRequestDto, TextualObjectFindResultDto, TextualObjectStoredReceipt};
-use crate::to_machine::to_machine_struct::TextualObjectMachine;
 
+use crate::to::to_dto::{TextualObjectAddManyDto, TextualObjectFindRequestDto, TextualObjectFindResultDto, TextualObjectStoredReceipt};
+use crate::to::to_struct::TextualObject;
+use crate::to_machine::to_machine_struct::TextualObjectMachine;
 
 /*
 These are methods mostly exposed to the ToApi, such batch adding dtos etc--why it's called public operation methods
@@ -12,7 +11,7 @@ impl TextualObjectMachine {
     /// add from TextualObjectAddManyDto, main method for adding from dto
     pub async fn add_tos(&mut self, add_tos_dto: TextualObjectAddManyDto) -> TextualObjectStoredReceipt {
         // get pool
-        let mut pool = self.get_pool().await;
+        let _pool = self.get_pool().await;
 
         // create receipt
         let mut receipt = TextualObjectStoredReceipt::from(add_tos_dto.clone());

@@ -1,6 +1,6 @@
 use std::borrow::BorrowMut;
 
-use sqlx::{Connection, Error, Pool, Row, Sqlite, SqliteConnection};
+use sqlx::{Error, Pool, Row, Sqlite};
 use sqlx::pool::PoolConnection;
 use sqlx::sqlite::{SqliteQueryResult, SqliteRow};
 use uuid::Uuid;
@@ -76,8 +76,8 @@ pub(crate) async fn check_if_ticket_id_exists(pool: &mut PoolConnection<Sqlite>,
         .fetch_one(pool)
         .await;
     match textual_object_rows {
-        Ok(s) => true,
-        Err(e) => false,
+        Ok(_s) => true,
+        Err(_e) => false,
     }
 }
 
@@ -121,6 +121,7 @@ fn load_sqlite_row_to_textual_object(textual_object_row: Result<SqliteRow, Error
             let textual_object = TextualObject {
                 id: textual_object_row.get("id"),
                 ticket_id: textual_object_row.get("ticket_id"),
+                ticket_minimal: textual_object_row.get("ticket_minimal"),
                 source_id: textual_object_row.get("source_id"),
                 source_id_type: textual_object_row.get("source_id_type"),
                 source_path: textual_object_row.get("source_path"),
