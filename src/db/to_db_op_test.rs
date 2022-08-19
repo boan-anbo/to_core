@@ -1,20 +1,20 @@
 // test groups
 #[cfg(test)]
 mod test {
-    use std::{env, fs};
-    use std::borrow::{Borrow, BorrowMut};
+    use std::{env};
+    use std::borrow::{BorrowMut};
     use std::path::PathBuf;
 
-    use chrono::Utc;
-    use dotenv::dotenv;
-    use serde_json::Value;
-    use sqlx::Connection;
+    
+    
+    
+    
     use uuid::Uuid;
 
-    use crate::db::db_op::{connect_to_database, initialize_database, reset_database};
+    use crate::db::db_op::{connect_to_database, initialize_database};
     use crate::db::to_db_op::{check_if_ticket_id_exists, delete_to_by_ticket_id, find_to_by_id, find_to_by_ticket_id, insert_to};
     use crate::to::to_struct::TextualObject;
-    use crate::to_card::to_card_struct::TextualObjectCard;
+    
     use crate::utils::id_generator::generate_id;
 
     // save env DATABASE_URL in .env file to static variable
@@ -119,7 +119,7 @@ mod test {
         let mut conn = pool.acquire().await.unwrap();
         let received_id = insert_to(conn.borrow_mut(), &to_insert).await;
         assert_eq!(received_id, to_insert_uuid);
-        let mut conn2 = pool.acquire().await.unwrap();
+        let _conn2 = pool.acquire().await.unwrap();
         let found_to = find_to_by_id(conn.borrow_mut(), &to_insert_uuid).await;
         assert!(found_to.is_some());
         assert_eq!(found_to.unwrap().id, to_insert_uuid);

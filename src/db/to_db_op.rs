@@ -24,9 +24,10 @@ pub(crate) async fn insert_to(pool: &mut PoolConnection<Sqlite>, textual_object:
         updated,
         json,
         card,
-        card_map
+        card_map,
+        ticket_minimal
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
         textual_object.id,
         textual_object.ticket_id,
         textual_object.source_id,
@@ -39,7 +40,8 @@ pub(crate) async fn insert_to(pool: &mut PoolConnection<Sqlite>, textual_object:
         textual_object.updated,
         textual_object.json,
         textual_object.card,
-        textual_object.card_map
+        textual_object.card_map,
+        textual_object.ticket_minimal,
     );
     insert_query.execute(pool).await.unwrap();
     textual_object.id

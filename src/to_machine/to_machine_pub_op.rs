@@ -87,7 +87,7 @@ mod test {
     async fn test_add_tos() {
         //
         // create add_tos_dto
-        let mut add_tos_dto = TextualObjectAddManyDto::sample();
+        let add_tos_dto = TextualObjectAddManyDto::sample();
 
         // get resources test folder
 
@@ -133,7 +133,7 @@ mod test {
         // random filename
         let random_filename = generate_id();
 
-        let mut find_request_dto = TextualObjectFindRequestDto {
+        let find_request_dto = TextualObjectFindRequestDto {
             ticket_ids: vec![to_1.ticket_id.clone(), to_2.ticket_id.clone(), to_3.ticket_id.clone()],
             store_url: join_db_path(&test_database_dir, &random_filename).to_string(),
         };

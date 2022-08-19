@@ -1,11 +1,11 @@
 use chrono::{DateTime, FixedOffset, NaiveDateTime};
 
 use crate::to_ticket::parser::parser_option::ParserOption;
-use crate::to_ticket::to_ticket_position::ToTicketInTextPosition;
+use crate::to_ticket::to_ticket_position::ToTicketInTextInfo;
 use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
 
 impl TextualObjectTicket {
-    pub fn parse(mark_content: &str, opt: &ParserOption, intext_position: Option<ToTicketInTextPosition>) -> Self {
+    pub fn parse(mark_content: &str, opt: &ParserOption, intext_position: Option<ToTicketInTextInfo>) -> Self {
 
         // remove left and right markers if they exist
         let mut clean_content = mark_content.replace(&opt.to_marker.left_marker, "");
@@ -41,7 +41,7 @@ impl TextualObjectTicket {
 
             // check if the key is a reserved field, if so, assign it to the corresponding field
             match key.as_ref() {
-                "id" => { to_ticket.id = value }
+                "id" => { to_ticket.ticket_id = value }
                 "updated" => {
                     let naive_updated = NaiveDateTime::parse_from_str(&value, &opt.date_format).unwrap();
                     to_ticket.to_updated = DateTime::<FixedOffset>::from_utc(naive_updated, FixedOffset::east(0));
@@ -106,7 +106,7 @@ Parser tests
         let opt = ParserOption::default();
         let mark_content = format!("{}id:test_id|key1:value1|key2:value2|updated:2018-01-01 00:00:00|store_info:store_info|store_id:store_id{}", opt.to_marker.left_marker, opt.to_marker.right_marker);
         let to_ticket = TextualObjectTicket::parse(&mark_content, &opt, None);
-        assert_eq!(to_ticket.id, "test_id".to_string());
+        assert_eq!(to_ticket.ticket_id, "test_id".to_string());
         assert_eq!(to_ticket.values.len(), 2);
         assert_eq!(to_ticket.values.get("key1").unwrap(), "value1");
         assert_eq!(to_ticket.values.get("key2").unwrap(), "value2");
@@ -120,7 +120,7 @@ Parser tests
         let opt = ParserOption::default();
         let mark_content = format!("{}id:test_id|key1:|key2|:value1|updated:2018-01-01 00:00:00|store_info:store_info{}", opt.to_marker.left_marker, opt.to_marker.right_marker);
         let to_ticket = TextualObjectTicket::parse(&mark_content, &opt, None);
-        assert_eq!(to_ticket.id, "test_id".to_string());
+        assert_eq!(to_ticket.ticket_id, "test_id".to_string());
         assert_eq!(to_ticket.values.len(), 3);
         assert_eq!(to_ticket.values.get("key1").unwrap(), "");
         assert_eq!(to_ticket.values.get("key2").unwrap(), "");
@@ -134,6 +134,7 @@ Parser tests
     fn test_from_json() {
         let json = r#"{
             "id": "test_id",
+            "ticket_id": "12345",
             "to_updated": "2018-01-01T19:20:30.45+01:00",
             "to_store_url": "store_url_value",
             "to_store_info": "store_info_value",
@@ -143,7 +144,7 @@ Parser tests
             ]
         }"#;
         let to_ticket = TextualObjectTicket::from_json(json);
-        assert_eq!(to_ticket.id, "test_id".to_string());
+        assert_eq!(to_ticket.ticket_id, "12345".to_string());
         assert_eq!(to_ticket.values.len(), 2);
         assert_eq!(to_ticket.values.get("key1").unwrap(), "value1");
         assert_eq!(to_ticket.values.get("key2").unwrap(), "value2");

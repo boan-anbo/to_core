@@ -9,7 +9,7 @@ impl TextualObjectTicket {
         // create a list of string to be added
         let mut print_label: Vec<String> = Vec::new();
         // add id
-        print_label.push(format!("id: {}", self.id));
+        print_label.push(format!("id: {}", self.ticket_id));
 
         if !opt.minimal {
             // add values; use reverse order otherwise the first inserted is the last printed
@@ -78,7 +78,7 @@ mod tests {
     #[test]
     fn test_print_ticket_empty() {
         let mut ticket = TextualObjectTicket::default();
-        ticket.id = "test_id".to_string();
+        ticket.ticket_id = "test_id".to_string();
         let print_label = ticket.print(None);
         assert_eq!(print_label, format!("[[id: test_id | updated: {}]]", Utc::now().format("%Y-%m-%d %H:%M:%S")));
     }
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn test_print_ticket_with_values() {
         let mut ticket = TextualObjectTicket::default();
-        ticket.id = "test_id".to_string();
+        ticket.ticket_id = "test_id".to_string();
         ticket.values.insert("key1".to_string(), "value1".to_string());
         ticket.values.insert("key2".to_string(), "value2".to_string());
         let print_label = ticket.print(None);
@@ -98,7 +98,7 @@ mod tests {
     #[test]
     fn test_print_ticket_with_values_and_meta_data() {
         let mut ticket = TextualObjectTicket::default();
-        ticket.id = "test_id".to_string();
+        ticket.ticket_id = "test_id".to_string();
         ticket.values.insert("key1".to_string(), "value1".to_string());
         ticket.values.insert("key2".to_string(), "value2".to_string());
         ticket.to_updated = FixedOffset::east(0).ymd(2019, 1, 1).and_hms(0, 0, 0);
@@ -112,7 +112,7 @@ mod tests {
     #[test]
     fn test_print_ticket_with_values_and_meta_data_conflict() {
         let mut ticket = TextualObjectTicket::default();
-        ticket.id = "test_id".to_string();
+        ticket.ticket_id = "test_id".to_string();
         ticket.values.insert("key1".to_string(), "value1".to_string());
         ticket.values.insert("key2".to_string(), "value2".to_string());
         ticket.to_updated = FixedOffset::east(0).ymd(2019, 1, 1).and_hms(0, 0, 0);
@@ -128,7 +128,8 @@ mod tests {
     #[test]
     fn test_print_minimal_ticket_with_only_id() {
         let to = TextualObject::get_sample();
-        let mut ticket = TextualObjectTicket::from(to);
+        let ticket_id = to.ticket_id.clone();
+        let ticket = TextualObjectTicket::from(to);
         let minimal_label = ticket.print(Some(ToTicketPrintOption {
             include_updated: true,
             include_store_info: true,
@@ -136,8 +137,8 @@ mod tests {
             include_created: true,
             minimal: true, // i set other options to true but those should be overridden when minimal is true
         }));
-        assert_eq!(minimal_label, format!("[[id: test_id]]"));
-        let not_minimal_label = ticket.print(Some(ToTicketPrintOption {
+        assert_eq!(minimal_label, format!("[[id: {}]]", ticket_id));
+        let _not_minimal_label = ticket.print(Some(ToTicketPrintOption {
             include_updated: true,
             include_store_info: true,
             include_store_id: true,

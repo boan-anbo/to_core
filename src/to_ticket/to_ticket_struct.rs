@@ -1,15 +1,18 @@
 use chrono::{DateTime, FixedOffset, Local};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::to_ticket::to_ticket_marker::ToMarker;
-use crate::to_ticket::to_ticket_position::ToTicketInTextPosition;
+use crate::to_ticket::to_ticket_position::ToTicketInTextInfo;
 use crate::utils::id_generator::generate_id;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct TextualObjectTicket {
     // unique ID in the local storage
     pub id: String,
+    // unique ticket Id in the local storage
+    pub ticket_id: String,
     // values: indexMap of keys and values; uses indexMap rather than HashMap because IndexMap preserves the insertion orderj
     #[serde(with = "indexmap::serde_seq")]
     pub values: IndexMap<String, String>,
@@ -33,7 +36,7 @@ pub struct TextualObjectTicket {
     #[serde(default)]
     pub to_marker: ToMarker,
     #[serde(default)]
-    pub to_intext_option: Option<ToTicketInTextPosition>,
+    pub to_intext_option: Option<ToTicketInTextInfo>,
 
 }
 
@@ -41,7 +44,8 @@ pub struct TextualObjectTicket {
 impl Default for TextualObjectTicket {
     fn default() -> Self {
         TextualObjectTicket {
-            id: generate_id(),
+            id: String::new(),
+            ticket_id: generate_id(),
             values: IndexMap::new(),
             to_updated: Local::now().with_timezone(&FixedOffset::east(0)),
             to_store_url: None,
@@ -66,7 +70,7 @@ mod tests {
     #[test]
     fn test_create_ticket() {
         let ticket = TextualObjectTicket::default();
-        assert_eq!(ticket.id.len(), 5);
+        assert_eq!(ticket.ticket_id.len(), 5);
         assert_eq!(ticket.values.len(), 0);
         assert_eq!(ticket.to_updated.num_days_from_ce(), Utc::now().num_days_from_ce());
         assert_eq!(ticket.to_store_url, None);
