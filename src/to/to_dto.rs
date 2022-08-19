@@ -7,9 +7,9 @@ use crate::to::to_struct::TextualObject;
 use crate::to_card::to_card_struct::TextualObjectCard;
 use crate::utils::get_random_test_database_dir::get_random_test_database_dir;
 use crate::utils::id_generator::generate_id;
+use utoipa::{ToSchema};
 
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, ToSchema, Deserialize)]
 pub struct TextualObjectStoredReceipt {
     // <Unique_Store_Id, Stored_Textual_Object>
     pub tos_stored: IndexMap<String, TextualObject>,
@@ -37,7 +37,7 @@ impl From<TextualObjectAddManyDto> for TextualObjectStoredReceipt {
 }
 
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, ToSchema, Deserialize)]
 pub struct TextualObjectAddManyDto {
     // list of textual objects to add, String is the unique source id.
     // this is so that the recept will provide a list of unique ids with stored textual objects.
@@ -65,7 +65,7 @@ impl TextualObjectAddManyDto {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, ToSchema, Deserialize)]
 pub struct TextualObjectAddDto {
     // unique ID of the item in the source
     pub source_id: String,
