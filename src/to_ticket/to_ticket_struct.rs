@@ -1,7 +1,7 @@
 use chrono::{DateTime, FixedOffset, Local};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+
 
 use crate::to_ticket::to_ticket_marker::ToMarker;
 use crate::to_ticket::to_ticket_position::ToTicketInTextInfo;

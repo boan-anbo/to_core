@@ -1,8 +1,8 @@
-use std::io::empty;
+
 
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
-use serde::__private::de::TagOrContentField::Tag;
+
 
 use crate::to_ticket::parser::parser::scan_text_for_tickets;
 use crate::to_ticket::parser::parser_option::ParserOption;
@@ -26,12 +26,12 @@ impl From<TextualObjectTicket> for ToTag {
             key = values.keys().nth(0).unwrap().to_string();
         }
         let mut value: Option<String> = None;
-        if (values.len() >= 2) {
+        if values.len() >= 2 {
             let second_key = values.keys().nth(1).unwrap().to_string();
             value = Some(second_key);
         }
         let mut note: Option<String> = None;
-        if (values.len() >= 3) {
+        if values.len() >= 3 {
             let third_key = values.keys().nth(2).unwrap().to_string();
             note = Some(third_key);
 
@@ -99,7 +99,7 @@ impl ToTag {
 mod test {
     use std::borrow::Borrow;
 
-    use serde::__private::de::TagOrContentField::Tag;
+    
 
     use crate::to_tag::to_tag_struct::ToTag;
     use crate::to_ticket::parser::parser::scan_text_for_tickets;
@@ -165,7 +165,7 @@ mod test {
     #[test]
     fn test_scan_text_for_tags() {
         let raw_text = "1[[KEY|VALUE|NOTE]]\n2[[KEY2|VALUE2|NOTE2]]\n3[[KEY3|VALUE3|NOTE3]]";
-        let result = scan_text_for_tickets(raw_text, ParserOption::default());
+        let _result = scan_text_for_tickets(raw_text, ParserOption::default());
         let (cleaned, tags) = ToTag::scan_text_for_tags(&raw_text);
         assert_eq!(cleaned, "1\n2\n3");
         assert_eq!(tags.len(), 3);

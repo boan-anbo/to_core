@@ -1,3 +1,8 @@
+#![allow(
+dead_code,
+unused_imports
+)]
+
 pub mod entities;
 pub(crate) mod utils;
 pub mod to_machine;
@@ -7,4 +12,6 @@ pub mod to;
 pub mod db;
 pub mod to_card;
 mod to_tag;
+
+
 
