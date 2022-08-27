@@ -1,11 +1,13 @@
 use std::io::empty;
+
 use indexmap::IndexMap;
-use crate::to_ticket::to_ticket_marker::ToMarker;
-use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
 use serde::{Deserialize, Serialize};
 use serde::__private::de::TagOrContentField::Tag;
+
 use crate::to_ticket::parser::parser::scan_text_for_tickets;
 use crate::to_ticket::parser::parser_option::ParserOption;
+use crate::to_ticket::to_ticket_marker::ToMarker;
+use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct ToTag {
@@ -96,7 +98,9 @@ impl ToTag {
 #[cfg(test)]
 mod test {
     use std::borrow::Borrow;
+
     use serde::__private::de::TagOrContentField::Tag;
+
     use crate::to_tag::to_tag_struct::ToTag;
     use crate::to_ticket::parser::parser::scan_text_for_tickets;
     use crate::to_ticket::parser::parser_option::ParserOption;

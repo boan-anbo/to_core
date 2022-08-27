@@ -1,20 +1,15 @@
 // test groups
 #[cfg(test)]
 mod test {
-    use std::{env};
-    use std::borrow::{BorrowMut};
+    use std::env;
+    use std::borrow::BorrowMut;
     use std::path::PathBuf;
 
-    
-    
-    
-    
     use uuid::Uuid;
 
     use crate::db::db_op::{connect_to_database, initialize_database};
     use crate::db::to_db_op::{check_if_ticket_id_exists, delete_to_by_ticket_id, find_to_by_id, find_to_by_ticket_id, insert_to};
     use crate::to::to_struct::TextualObject;
-    
     use crate::utils::id_generator::generate_id;
 
     // save env DATABASE_URL in .env file to static variable
