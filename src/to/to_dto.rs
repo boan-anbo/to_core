@@ -20,6 +20,7 @@ pub struct TextualObjectStoredReceipt {
     pub store_info: String,
     pub store_url: String,
     pub stored: chrono::NaiveDateTime,
+    pub total_tos_stored: usize,
 }
 
 // create receipt From TextualObjectStoredReceipt
@@ -31,6 +32,7 @@ impl From<TextualObjectAddManyDto> for TextualObjectStoredReceipt {
             store_info: String::new(),
             store_url: add_tos_dto.store_dir,
             stored: Utc::now().naive_utc(),
+            total_tos_stored: 0,
         };
         if add_tos_dto.store_info.is_some() {
             receipt.store_info = add_tos_dto.store_info.unwrap_or("".to_string());
@@ -52,6 +54,19 @@ pub struct TextualObjectAddManyDto {
     pub store_filename: Option<String>,
 }
 
+// impl default
+impl Default for TextualObjectAddManyDto {
+    fn default() -> Self {
+        TextualObjectAddManyDto {
+            tos: HashMap::new(),
+            overwrite: false,
+            store_info: None,
+            store_dir: String::new(),
+            store_filename: None,
+        }
+    }
+}
+
 impl TextualObjectAddManyDto {
     pub fn sample() -> Self {
         let mut sample_dto = TextualObjectAddManyDto {
@@ -66,6 +81,7 @@ impl TextualObjectAddManyDto {
         };
         sample_dto
     }
+
 }
 
 #[derive(Clone, Debug, Serialize, ToSchema, Deserialize)]
@@ -80,6 +96,19 @@ pub struct TextualObjectAddDto {
 
     // item
     pub json: serde_json::Value,
+}
+
+// impl default
+impl Default for TextualObjectAddDto {
+    fn default() -> Self {
+        TextualObjectAddDto {
+            source_id: String::new(),
+            source_id_type: String::new(),
+            source_path: String::new(),
+            source_name: String::new(),
+            json: serde_json::Value::Null,
+        }
+    }
 }
 
 impl TextualObjectAddDto {
