@@ -1,5 +1,5 @@
 use crate::to_ticket::to_ticket_marker::ToMarker;
-use crate::to_ticket::to_ticket_option::ToTicketPrintOption;
+
 
 pub fn print_minimal_ticket(ticket_id: &str, opt: Option<ToMarker>) -> String {
     // if opt is None, use default
