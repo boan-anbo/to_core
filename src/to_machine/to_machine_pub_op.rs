@@ -34,6 +34,7 @@ impl TextualObjectMachine {
             // insert to
             self.add_textual_object(&to).await;
             receipt.tos_stored.insert(unique_ticket_id, to);
+            receipt.total_tos_stored += 1;
         };
 
         // save metadata to receipt
@@ -115,6 +116,9 @@ mod test {
         // check stored to has store information and ticket id
         assert_eq!(first_stored_to.store_url, textual_object_machine.store_url);
         assert_eq!(first_stored_to.store_info, textual_object_machine.store_info);
+
+        // check tos count
+        assert_eq!(receipt.total_tos_stored, add_tos_dto.tos.len());
 
         println!("{:?}", serde_json::to_string_pretty(&receipt).unwrap());
     }
