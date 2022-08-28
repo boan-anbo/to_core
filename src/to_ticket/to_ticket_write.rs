@@ -1,8 +1,8 @@
 use crate::to_ticket::to_ticket_option::ToTicketPrintOption;
-use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
+use crate::to_ticket::to_ticket_struct::ToTicket;
 
 // writer methods
-impl TextualObjectTicket {
+impl ToTicket {
     pub fn print(&self, opt: Option<ToTicketPrintOption>) -> String {
         // if not optioin, use default option
         let opt = opt.unwrap_or_default();
@@ -73,11 +73,11 @@ mod tests {
 
     use crate::to::to_struct::TextualObject;
     use crate::to_ticket::to_ticket_option::ToTicketPrintOption;
-    use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
+    use crate::to_ticket::to_ticket_struct::ToTicket;
 
     #[test]
     fn test_print_ticket_empty() {
-        let mut ticket = TextualObjectTicket::default();
+        let mut ticket = ToTicket::default();
         ticket.ticket_id = "test_id".to_string();
         let print_label = ticket.print(None);
         assert_eq!(print_label, format!("[[id: test_id | updated: {}]]", Utc::now().format("%Y-%m-%d %H:%M:%S")));
@@ -86,7 +86,7 @@ mod tests {
     // test print ticket with values
     #[test]
     fn test_print_ticket_with_values() {
-        let mut ticket = TextualObjectTicket::default();
+        let mut ticket = ToTicket::default();
         ticket.ticket_id = "test_id".to_string();
         ticket.values.insert("key1".to_string(), "value1".to_string());
         ticket.values.insert("key2".to_string(), "value2".to_string());
@@ -97,7 +97,7 @@ mod tests {
     // test print ticket with values and meta-data
     #[test]
     fn test_print_ticket_with_values_and_meta_data() {
-        let mut ticket = TextualObjectTicket::default();
+        let mut ticket = ToTicket::default();
         ticket.ticket_id = "test_id".to_string();
         ticket.values.insert("key1".to_string(), "value1".to_string());
         ticket.values.insert("key2".to_string(), "value2".to_string());
@@ -111,7 +111,7 @@ mod tests {
     // test when print ticket values has keys that conflict with meta-data
     #[test]
     fn test_print_ticket_with_values_and_meta_data_conflict() {
-        let mut ticket = TextualObjectTicket::default();
+        let mut ticket = ToTicket::default();
         ticket.ticket_id = "test_id".to_string();
         ticket.values.insert("key1".to_string(), "value1".to_string());
         ticket.values.insert("key2".to_string(), "value2".to_string());
@@ -129,7 +129,7 @@ mod tests {
     fn test_print_minimal_ticket_with_only_id() {
         let to = TextualObject::get_sample();
         let ticket_id = to.ticket_id.clone();
-        let ticket = TextualObjectTicket::from(to);
+        let ticket = ToTicket::from(to);
         let minimal_label = ticket.print(Some(ToTicketPrintOption {
             include_updated: true,
             include_store_info: true,

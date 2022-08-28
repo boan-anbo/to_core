@@ -6,10 +6,10 @@ use uuid::Uuid;
 
 use crate::db::to_db_op::{check_if_ticket_id_exists, count_textual_objects, delete_to_by_ticket_id, find_to_by_ticket_id, insert_to};
 use crate::to::to_struct::TextualObject;
-use crate::to_machine::to_machine_struct::TextualObjectMachine;
+use crate::to_machine::to_machine_struct::ToMachine;
 use crate::utils::id_generator::generate_id;
 
-impl TextualObjectMachine {
+impl ToMachine {
     pub async fn update_to_count(&mut self) -> i64 {
         let pool = self.get_pool().await;
 
@@ -86,7 +86,7 @@ mod test {
     use crate::enums::store_type::StoreType;
     use crate::to::to_struct::TextualObject;
     use crate::to_machine::to_machine_option::ToMachineOption;
-    use crate::to_machine::to_machine_struct::TextualObjectMachine;
+    use crate::to_machine::to_machine_struct::ToMachine;
     use crate::utils::get_random_test_database_dir::get_random_test_database_dir;
     use crate::utils::id_generator::generate_id;
 
@@ -118,7 +118,7 @@ mod test {
     async fn test_new_existent_sqlite_add() {
         let existent_sqlite_file = get_test_asset_path_without_file();
         // create a new TextualObjectMachineRs with SQLITE store
-        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE, Some(
+        let mut tom = ToMachine::new(&existent_sqlite_file, StoreType::SQLITE, Some(
             ToMachineOption {
                 use_random_file_name: true,
                 ..Default::default()
@@ -141,7 +141,7 @@ mod test {
     async fn test_find_by_ticket_id() {
         let existent_sqlite_file = get_test_asset_path_without_file();
         // create a new TextualObjectMachineRs with SQLITE store
-        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE, Some(ToMachineOption {
+        let mut tom = ToMachine::new(&existent_sqlite_file, StoreType::SQLITE, Some(ToMachineOption {
             store_file_name: Some(generate_id()),
             ..Default::default()
         })).await;
@@ -165,8 +165,8 @@ mod test {
     async fn test_delete_by_ticket_id() {
         let existent_sqlite_file = get_test_asset_path_without_file();
         // create a new TextualObjectMachineRs with SQLITE store
-        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE,
-                                                Some(ToMachineOption {
+        let mut tom = ToMachine::new(&existent_sqlite_file, StoreType::SQLITE,
+                                     Some(ToMachineOption {
                                                     store_file_name: Some(generate_id()),
                                                     ..Default::default()
                                                 }),
@@ -200,7 +200,7 @@ mod test {
     async fn test_find_all_by_ticket_ids() {
         let existent_sqlite_file = get_test_asset_path_without_file();
         // create a new TextualObjectMachineRs with SQLITE store
-        let mut tom = TextualObjectMachine::new(&existent_sqlite_file, StoreType::SQLITE, None).await;
+        let mut tom = ToMachine::new(&existent_sqlite_file, StoreType::SQLITE, None).await;
         let _current_to_count = tom.to_count;
         // create three new textual objects
         let sample_to1 = TextualObject::get_sample();
@@ -223,7 +223,7 @@ mod test {
     async fn test_get_unique_ticket_id() {
         let random_database_dir = get_random_test_database_dir();
         // create a new TextualObjectMachineRs with SQLITE store
-        let mut tom = TextualObjectMachine::new(&random_database_dir, StoreType::SQLITE, Some(ToMachineOption{
+        let mut tom = ToMachine::new(&random_database_dir, StoreType::SQLITE, Some(ToMachineOption{
             use_random_file_name: true,
             ..Default::default()
         })).await;

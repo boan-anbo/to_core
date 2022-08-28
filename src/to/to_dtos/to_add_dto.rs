@@ -6,11 +6,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use utoipa::ToSchema;
 use uuid::Uuid;
-use crate::error::{TextualObjectErrorMessage, TextualObjectErrors};
+use crate::error::{TextualObjectErrorMessage, ToErrors};
 
 use crate::to::to_struct::TextualObject;
-use crate::to_card::to_card_convert_rule::TextualObjectCardConvertRule;
-use crate::to_card::to_card_struct::TextualObjectCard;
+use crate::to_card::to_card_convert_rule::ToCardConvertRule;
+use crate::to_card::to_card_struct::ToCard;
 use crate::to_ticket::to_ticket_utils::print_minimal_ticket;
 use crate::utils::get_random_test_database_dir::get_random_test_database_dir;
 use crate::utils::id_generator::generate_id;
@@ -28,8 +28,8 @@ pub struct TextualObjectStoredReceipt {
 
 // create receipt From TextualObjectStoredReceipt
 
-impl From<TextualObjectAddManyDto> for TextualObjectStoredReceipt {
-    fn from(add_tos_dto: TextualObjectAddManyDto) -> Self {
+impl From<ToAddManyDto> for TextualObjectStoredReceipt {
+    fn from(add_tos_dto: ToAddManyDto) -> Self {
         let mut receipt = TextualObjectStoredReceipt {
             tos_stored: IndexMap::new(),
             store_info: String::new(),
@@ -46,23 +46,23 @@ impl From<TextualObjectAddManyDto> for TextualObjectStoredReceipt {
 
 
 #[derive(Clone, Debug, Serialize, ToSchema, Deserialize)]
-pub struct TextualObjectAddManyDto {
+pub struct ToAddManyDto {
     // list of textual objects to add, String is the unique source id.
     // this is so that the recept will provide a list of unique ids with stored textual objects.
-    pub tos: Vec<TextualObjectAddDto>,
+    pub tos: Vec<ToAddDto>,
     // whether when there is an existing TO in the store with the same source_id, replace it with the new item.
     pub overwrite: bool,
     pub store_info: Option<String>,
     pub store_dir: String,
     pub store_filename: Option<String>,
     // map rules to convert to fields to card fields
-    pub card_map_rules: Vec<TextualObjectCardConvertRule>,
+    pub card_map_rules: Vec<ToCardConvertRule>,
 }
 
 // impl default
-impl Default for TextualObjectAddManyDto {
+impl Default for ToAddManyDto {
     fn default() -> Self {
-        TextualObjectAddManyDto {
+        ToAddManyDto {
             tos: Vec::new(),
             overwrite: false,
             store_info: None,
@@ -73,9 +73,9 @@ impl Default for TextualObjectAddManyDto {
     }
 }
 
-impl TextualObjectAddManyDto {
+impl ToAddManyDto {
     pub fn sample() -> Self {
-        let mut sample_dto = TextualObjectAddManyDto {
+        let mut sample_dto = ToAddManyDto {
             tos: Vec::new(),
             overwrite: false,
             store_info: Some("Random Store Info".to_string()),
@@ -84,18 +84,18 @@ impl TextualObjectAddManyDto {
             card_map_rules: Vec::new(),
         };
         for _ in 0..10 {
-            sample_dto.tos.push(TextualObjectAddDto::sample());
+            sample_dto.tos.push(ToAddDto::sample());
         };
         sample_dto
     }
 
     // check if the add request is valid
-    pub fn is_valid(&self) -> Result<(), TextualObjectErrors> {
+    pub fn is_valid(&self) -> Result<(), ToErrors> {
         let mut errors: TextualObjectErrorMessage = TextualObjectErrorMessage::default();
         if self.tos.is_empty() {
             errors.message = "No textual objects to add".to_string();
             errors.suggestion = "Add objects in the \"tos\" field of your request.".to_string();
-            return Err(TextualObjectErrors::AddManyRequestError(errors));
+            return Err(ToErrors::AddManyRequestError(errors));
         }
 
         if self.are_card_map_rules_valid() == false {
@@ -103,7 +103,7 @@ impl TextualObjectAddManyDto {
             errors.message = "Card map rules are not valid".to_string();
             errors.suggestion = format!("See card fields specifications and provide correct Textual Object Card fields");
             errors.payload_for_user = json!(invalid_fields);
-            return Err(TextualObjectErrors::AddManyRequestError(errors));
+            return Err(ToErrors::AddManyRequestError(errors));
         }
 
         Ok(())
@@ -129,7 +129,7 @@ impl TextualObjectAddManyDto {
     }
 
     // check if the card_map_rules are valid and return all the invalid rules
-    fn are_card_map_rules_valid_return_invalid(&self) -> (bool, Vec<TextualObjectCardConvertRule>) {
+    fn are_card_map_rules_valid_return_invalid(&self) -> (bool, Vec<ToCardConvertRule>) {
         let mut invalid_rules = Vec::new();
         for rule in &self.card_map_rules {
             if !rule.is_card_field_valid() {
@@ -141,7 +141,7 @@ impl TextualObjectAddManyDto {
 }
 
 #[derive(Clone, Debug, Serialize, ToSchema, Deserialize)]
-pub struct TextualObjectAddDto {
+pub struct ToAddDto {
     // unique ID of the item in the source
     pub source_id: Option<String>,
     // eg Zotero URI or Zotero Citekey are two types of `source_id`
@@ -156,9 +156,9 @@ pub struct TextualObjectAddDto {
 }
 
 // impl default
-impl Default for TextualObjectAddDto {
+impl Default for ToAddDto {
     fn default() -> Self {
-        TextualObjectAddDto {
+        ToAddDto {
             source_id: None,
             source_id_type: None,
             source_path: None,
@@ -168,9 +168,9 @@ impl Default for TextualObjectAddDto {
     }
 }
 
-impl TextualObjectAddDto {
+impl ToAddDto {
     pub fn sample() -> Self {
-        TextualObjectAddDto {
+        ToAddDto {
             source_id: Some("source_id_value".to_string()),
             source_id_type: Some("source_id_type_value".to_string()),
             source_path: Some("source_path_value".to_string()),
@@ -194,8 +194,8 @@ impl TextualObjectAddDto {
 }
 
 // implement from dto to textual object
-impl From<TextualObjectAddDto> for TextualObject {
-    fn from(dto: TextualObjectAddDto) -> Self {
+impl From<ToAddDto> for TextualObject {
+    fn from(dto: ToAddDto) -> Self {
         let ticket_id = generate_id();
         // create a new textual object, ready to persist to the database
         let mut to = TextualObject {
@@ -217,7 +217,7 @@ impl From<TextualObjectAddDto> for TextualObject {
             updated: Utc::now().naive_utc(),
 
             card_map: String::new(),
-            card: sqlx::types::Json(TextualObjectCard::default()),
+            card: sqlx::types::Json(ToCard::default()),
 
             json: sqlx::types::Json(dto.json),
         };
@@ -249,7 +249,7 @@ mod test {
                 }
             });
 
-        let dto = TextualObjectAddDto {
+        let dto = ToAddDto {
             source_id: Some("source_id_value".to_string()),
             source_id_type: Some("source_id_type_value".to_string()),
             source_path: Some("source_path_value".to_string()),
@@ -267,7 +267,7 @@ mod test {
     // test validity check for add many dto
     #[test]
     fn test_are_textual_objects_valid() {
-        let dto = TextualObjectAddManyDto {
+        let dto = ToAddManyDto {
             tos: vec![],
           ..Default::default()
         };
@@ -277,7 +277,7 @@ mod test {
         match dto.is_valid() {
             Err(e) => {
                 match e {
-                    TextualObjectErrors::AddManyRequestError(e) => {
+                    ToErrors::AddManyRequestError(e) => {
                         assert_eq!(e.message, "No textual objects to add");
                         assert!(true);
                     }

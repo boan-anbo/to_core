@@ -1,7 +1,7 @@
 use crate::db::db_op::drop_database;
-use crate::to_machine::to_machine_struct::TextualObjectMachine;
+use crate::to_machine::to_machine_struct::ToMachine;
 
-impl TextualObjectMachine {
+impl ToMachine {
     pub(crate) async fn delete_store(&self) {
         if self.pool.is_some() {
             self.close_pool().await;
