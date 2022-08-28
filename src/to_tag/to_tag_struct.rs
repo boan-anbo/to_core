@@ -2,12 +2,12 @@
 
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+use crate::to_parser::parser::ToParser;
 
 
-use crate::to_ticket::parser::parser::scan_text_for_tickets;
-use crate::to_ticket::parser::parser_option::ParserOption;
+use crate::to_parser::parser_option::ParserOption;
 use crate::to_ticket::to_ticket_marker::ToMarker;
-use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
+use crate::to_ticket::to_ticket_struct::ToTicket;
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct ToTag {
@@ -18,8 +18,8 @@ pub struct ToTag {
 
 // implement from TextualObjectTicket
 
-impl From<TextualObjectTicket> for ToTag {
-    fn from(to_ticket: TextualObjectTicket) -> ToTag {
+impl From<ToTicket> for ToTag {
+    fn from(to_ticket: ToTicket) -> ToTag {
         let values: IndexMap<String, String> = to_ticket.values;
         let mut key = String::new();
         if values.len() >= 1 {
@@ -56,7 +56,7 @@ impl ToTag {
     // Cleaned text = text without tags.
     // List of tags = list of tags found in text.
     pub fn scan_text_for_tags(text: &str) -> (String, Vec<ToTag>) {
-        let all_tickets = scan_text_for_tickets(text, ParserOption::default());
+        let all_tickets = ToParser::scan_text_for_tickets(text, ParserOption::default());
         let mut tags: Vec<ToTag> = Vec::new();
         for ticket in all_tickets {
             let tag = ToTag::from(ticket);
@@ -102,14 +102,14 @@ mod test {
     
 
     use crate::to_tag::to_tag_struct::ToTag;
-    use crate::to_ticket::parser::parser::scan_text_for_tickets;
-    use crate::to_ticket::parser::parser_option::ParserOption;
+    use crate::to_parser::parser_option::ParserOption;
+    use crate::to_parser::parser::ToParser;
 
     // test from ticket to tag
     #[test]
     fn test_from_ticket_to_tag() {
         let raw_text = "[[KEY|VALUE|NOTE]]";
-        let result = scan_text_for_tickets(raw_text, ParserOption::default());
+        let result = ToParser::scan_text_for_tickets(raw_text, ParserOption::default());
         let first_ticket = result[0].clone();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].values.get("KEY").unwrap(), "");
@@ -123,7 +123,7 @@ mod test {
     #[test]
     fn test_noise_ticket_to_tag() {
         let raw_text = "[[KEY:value|VALUE:2|:3]]";
-        let result = scan_text_for_tickets(raw_text, ParserOption::default());
+        let result = ToParser::scan_text_for_tickets(raw_text, ParserOption::default());
         let first_ticket = result[0].clone();
         assert_eq!(result.len(), 1);
         let tag = ToTag::from(first_ticket);
@@ -138,7 +138,7 @@ mod test {
     #[test]
     fn test_ticket_to_tag_key_value_only() {
         let raw_text = "[[KEY:value|VALUE:2]]";
-        let result = scan_text_for_tickets(raw_text, ParserOption::default());
+        let result = ToParser::scan_text_for_tickets(raw_text, ParserOption::default());
         let first_ticket = result[0].clone();
         assert_eq!(result.len(), 1);
         let tag = ToTag::from(first_ticket);
@@ -152,7 +152,7 @@ mod test {
     #[test]
     fn test_ticket_to_tag_key_only() {
         let raw_text = "[[KEY:value]]";
-        let result = scan_text_for_tickets(raw_text, ParserOption::default());
+        let result = ToParser::scan_text_for_tickets(raw_text, ParserOption::default());
         let first_ticket = result[0].clone();
         assert_eq!(result.len(), 1);
         let tag = ToTag::from(first_ticket);
@@ -165,7 +165,7 @@ mod test {
     #[test]
     fn test_scan_text_for_tags() {
         let raw_text = "1[[KEY|VALUE|NOTE]]\n2[[KEY2|VALUE2|NOTE2]]\n3[[KEY3|VALUE3|NOTE3]]";
-        let _result = scan_text_for_tickets(raw_text, ParserOption::default());
+        let _result = ToParser::scan_text_for_tickets(raw_text, ParserOption::default());
         let (cleaned, tags) = ToTag::scan_text_for_tags(&raw_text);
         assert_eq!(cleaned, "1\n2\n3");
         assert_eq!(tags.len(), 3);

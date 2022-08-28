@@ -23,7 +23,7 @@ pub struct Comment {
 
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TextualObjectCard {
+pub struct ToCard {
     id: Uuid,
     // store metadata
     store_id: Uuid,
@@ -39,7 +39,7 @@ pub struct TextualObjectCard {
 }
 
 #[derive(Debug, Display, EnumString, EnumIter)]
-pub enum TextualObjectCardField {
+pub enum ToCardField {
     #[strum(serialize = "id")]
     Id,
     #[strum(serialize = "store_id")]
@@ -63,9 +63,9 @@ pub enum TextualObjectCardField {
 }
 
 // implement default
-impl Default for TextualObjectCard {
+impl Default for ToCard {
     fn default() -> Self {
-        TextualObjectCard {
+        ToCard {
             id: Uuid::new_v4(),
             store_id: Uuid::new_v4(),
             store_ticket_id: "store_ticket_id_value".to_string(),
@@ -81,7 +81,7 @@ impl Default for TextualObjectCard {
 }
 
 // implement json
-impl TextualObjectCard{
+impl ToCard {
     pub fn to_json(&self) -> serde_json::Value {
         serde_json::to_value(self).unwrap()
     }

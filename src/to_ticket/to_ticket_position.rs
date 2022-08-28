@@ -1,18 +1,18 @@
 use regex::Captures;
 use serde::{Deserialize, Serialize};
 
-// struct for recognition the regex match position: line, column, length
+/// struct for recognition the regex match position: line, column, length of the ticket in the original text
 #[derive(Serialize, Deserialize, Clone)]
-pub struct ToTicketInTextInfo {
+pub struct ToTicketPositionInfo {
     pub line: usize,
     pub column: usize,
     pub length: usize,
     pub raw_text: String,
 }
 
-impl ToTicketInTextInfo {
+impl ToTicketPositionInfo {
     pub fn from_match(m: &Captures, line: usize) -> Self {
-        ToTicketInTextInfo {
+        ToTicketPositionInfo {
             line,
             column: m.get(0).unwrap().start(),
             length: m.get(0).unwrap().end() - m.get(0).unwrap().start(),

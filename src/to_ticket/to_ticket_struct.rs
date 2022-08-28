@@ -4,11 +4,11 @@ use serde::{Deserialize, Serialize};
 
 
 use crate::to_ticket::to_ticket_marker::ToMarker;
-use crate::to_ticket::to_ticket_position::ToTicketInTextInfo;
+use crate::to_ticket::to_ticket_position::ToTicketPositionInfo;
 use crate::utils::id_generator::generate_id;
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct TextualObjectTicket {
+pub struct ToTicket {
     // unique ID in the local storage
     pub id: String,
     // unique ticket Id in the local storage
@@ -36,14 +36,14 @@ pub struct TextualObjectTicket {
     #[serde(default)]
     pub to_marker: ToMarker,
     #[serde(default)]
-    pub to_intext_option: Option<ToTicketInTextInfo>,
+    pub to_intext_option: Option<ToTicketPositionInfo>,
 
 }
 
 // create default TextualObjectTicket
-impl Default for TextualObjectTicket {
+impl Default for ToTicket {
     fn default() -> Self {
-        TextualObjectTicket {
+        ToTicket {
             id: String::new(),
             ticket_id: generate_id(),
             values: IndexMap::new(),
@@ -69,7 +69,7 @@ mod tests {
 
     #[test]
     fn test_create_ticket() {
-        let ticket = TextualObjectTicket::default();
+        let ticket = ToTicket::default();
         assert_eq!(ticket.ticket_id.len(), 5);
         assert_eq!(ticket.values.len(), 0);
         assert_eq!(ticket.to_updated.num_days_from_ce(), Utc::now().num_days_from_ce());

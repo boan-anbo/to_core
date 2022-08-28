@@ -3,8 +3,8 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::to_card::to_card_struct::TextualObjectCard;
-use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
+use crate::to_card::to_card_struct::ToCard;
+use crate::to_ticket::to_ticket_struct::ToTicket;
 use crate::to_ticket::to_ticket_utils::print_minimal_ticket;
 use crate::utils::id_generator::generate_id;
 
@@ -34,7 +34,7 @@ pub struct TextualObject {
 
     pub json: sqlx::types::Json<serde_json::Value>,
 
-    pub card: sqlx::types::Json<TextualObjectCard>,
+    pub card: sqlx::types::Json<ToCard>,
 
     // map of string to string, format: "to_key1, card_key1; to_key2, card_key2;" etc.
     pub card_map: String,
@@ -57,7 +57,7 @@ impl Default for TextualObject {
             created: Utc::now().naive_utc(),
             updated: Utc::now().naive_utc(),
             json: sqlx::types::Json(serde_json::Value::Null),
-            card: sqlx::types::Json(TextualObjectCard::default()),
+            card: sqlx::types::Json(ToCard::default()),
             card_map: String::new(),
         }
     }
@@ -81,7 +81,7 @@ impl TextualObject {
             created: Utc::now().naive_utc(),
             updated: Utc::now().naive_utc(),
             json: sqlx::types::Json(serde_json::Value::Null),
-            card: sqlx::types::Json(TextualObjectCard::default()),
+            card: sqlx::types::Json(ToCard::default()),
             card_map: String::new(),
         }
     }
@@ -112,8 +112,8 @@ impl TextualObject {
 }
 
 // implement converter from textual object to TextualObjectTicket
-impl From<TextualObject> for TextualObjectTicket {
-    fn from(textual_object: TextualObject) -> TextualObjectTicket {
+impl From<TextualObject> for ToTicket {
+    fn from(textual_object: TextualObject) -> ToTicket {
         // convert textual_object.json to IndexMap
         let json = &textual_object.json.0;
         let mut index_map: IndexMap<String, String> = IndexMap::new();
@@ -132,7 +132,7 @@ impl From<TextualObject> for TextualObjectTicket {
         } else {
             Some(String::new())
         };
-        TextualObjectTicket {
+        ToTicket {
             id: String::new(),
             ticket_id: textual_object.ticket_id.clone(),
             values: index_map,
@@ -150,7 +150,7 @@ impl From<TextualObject> for TextualObjectTicket {
 mod test {
     use uuid::Uuid;
 
-    use crate::to_ticket::to_ticket_struct::TextualObjectTicket;
+    use crate::to_ticket::to_ticket_struct::ToTicket;
 
     // test get_sample
     #[test]
@@ -163,7 +163,7 @@ mod test {
     #[test]
     fn textual_object_from_textual_object_ticket_test() {
         let sample_textual_object = super::TextualObject::get_sample();
-        let textual_object_ticket = TextualObjectTicket::from(sample_textual_object.clone());
+        let textual_object_ticket = ToTicket::from(sample_textual_object.clone());
         assert_eq!(&textual_object_ticket.ticket_id, &sample_textual_object.ticket_id);
         assert_eq!(textual_object_ticket.to_store_info.as_ref().unwrap(), &sample_textual_object.store_info);
         assert_eq!(textual_object_ticket.to_store_url.as_ref().unwrap(), &sample_textual_object.store_url);
