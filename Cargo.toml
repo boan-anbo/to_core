@@ -24,3 +24,5 @@ ctor = "0.1.0"
 utoipa = { version = "1.1.0", git = "https://github.com/juhaku/utoipa", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "1.1.0", git = "https://github.com/juhaku/utoipa", features = ["axum"] }
 proc-macro-error = "1.0"
+strum = "0.24.1"
+strum_macros = "0.24.3"

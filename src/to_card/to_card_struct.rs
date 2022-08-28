@@ -2,6 +2,7 @@ use chrono::NaiveDateTime;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use strum_macros::{Display, EnumIter, EnumString};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Person {
@@ -35,6 +36,30 @@ pub struct TextualObjectCard {
     creators: IndexMap<usize, Person>,
     comments: Vec<Comment>,
     extra: Vec<String>
+}
+
+#[derive(Debug, Display, EnumString, EnumIter)]
+pub enum TextualObjectCardField {
+    #[strum(serialize = "id")]
+    Id,
+    #[strum(serialize = "store_id")]
+    StoreId,
+    #[strum(serialize = "store_ticket_id")]
+    StoreTicketId,
+    #[strum(serialize = "store_url")]
+    StoreUrl,
+    #[strum(serialize = "store_info")]
+    StoreInfo,
+    #[strum(serialize = "title")]
+    Title,
+    #[strum(serialize = "description")]
+    Description,
+    #[strum(serialize = "creators")]
+    Creators,
+    #[strum(serialize = "comments")]
+    Comments,
+    #[strum(serialize = "extra")]
+    Extra
 }
 
 // implement default
