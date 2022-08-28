@@ -1,6 +1,6 @@
 use chrono::{DateTime, FixedOffset, NaiveDateTime};
 
-use crate::to_parser::parser_option::ParserOption;
+use crate::to_parser::parser_option::ToParserOption;
 use crate::to_ticket::to_ticket_position::ToTicketPositionInfo;
 use crate::to_ticket::to_ticket_struct::ToTicket;
 
@@ -8,7 +8,7 @@ impl ToTicket {
     /// Parse single ticket from text
     /// # Arguments
     /// * `marked_content_only` - raw text to parse
-    pub fn parse(marked_content_only: &str, opt: &ParserOption, intext_position: Option<ToTicketPositionInfo>) -> Self {
+    pub fn parse(marked_content_only: &str, opt: &ToParserOption, intext_position: Option<ToTicketPositionInfo>) -> Self {
 
         // remove left and right markers if they exist
         let mut clean_content = marked_content_only.replace(&opt.to_marker.left_marker, "");
@@ -79,13 +79,13 @@ Parser tests
  */
     use chrono::{Datelike, TimeZone, Utc};
 
-    use crate::to_parser::parser_option::ParserOption;
+    use crate::to_parser::parser_option::ToParserOption;
     use crate::to_ticket::to_ticket_struct::ToTicket;
 
     #[test]
     fn test_parse() {
         let mark_content = "key1:value1|key2:value2";
-        let p1 = ParserOption::default();
+        let p1 = ToParserOption::default();
         let to_ticket = ToTicket::parse(mark_content, &p1, None);
         assert_eq!(to_ticket.values.len(), 2);
         assert_eq!(to_ticket.values.get("key1").unwrap(), "value1");
@@ -94,7 +94,7 @@ Parser tests
 
     #[test]
     fn test_parse_string_with_markers() {
-        let opt = ParserOption::default();
+        let opt = ToParserOption::default();
         let mark_content = format!("{}key1:value1|key2:value2{}", opt.to_marker.left_marker, opt.to_marker.right_marker);
         let to_ticket = ToTicket::parse(&mark_content, &opt, None);
         assert_eq!(to_ticket.values.len(), 2);
@@ -106,7 +106,7 @@ Parser tests
     // test parse with meta-data
     #[test]
     fn test_parse_with_meta_data() {
-        let opt = ParserOption::default();
+        let opt = ToParserOption::default();
         let mark_content = format!("{}id:test_id|key1:value1|key2:value2|updated:2018-01-01 00:00:00|store_info:store_info|store_id:store_id{}", opt.to_marker.left_marker, opt.to_marker.right_marker);
         let to_ticket = ToTicket::parse(&mark_content, &opt, None);
         assert_eq!(to_ticket.ticket_id, "test_id".to_string());
@@ -120,7 +120,7 @@ Parser tests
 
     #[test]
     fn test_parse_with_missing_values() {
-        let opt = ParserOption::default();
+        let opt = ToParserOption::default();
         let mark_content = format!("{}id:test_id|key1:|key2|:value1|updated:2018-01-01 00:00:00|store_info:store_info{}", opt.to_marker.left_marker, opt.to_marker.right_marker);
         let to_ticket = ToTicket::parse(&mark_content, &opt, None);
         assert_eq!(to_ticket.ticket_id, "test_id".to_string());

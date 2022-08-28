@@ -26,7 +26,7 @@ impl ToFindRequestDto {
         }
 
         if !check_if_file_exists(&self.store_url) {
-            error_message.message = ToErrorMessage::FindRequestDtoStoreUrlDoesNotExist.to_string();
+            error_message.message = ToErrorMessage::FindOrScanRequestDtoStoreUrlDoesNotExist.to_string();
             return Err(ToErrors::FindRequestError(error_message));
         }
 
@@ -39,7 +39,7 @@ impl ToFindRequestDto {
 pub struct ToFindResultDto {
     pub store_url: String,
     // HashMap<ticket_id, TextualObject>
-    pub found_tos: HashMap<String, TextualObject>,
+    pub found_tos: Vec< TextualObject>,
     pub found_tos_count: usize,
     pub missing_tos_ids: Vec<String>,
     pub missing_tos_count: usize,

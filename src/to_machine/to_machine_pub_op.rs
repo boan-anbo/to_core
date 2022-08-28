@@ -3,8 +3,11 @@ use crate::error::ToErrors;
 
 use crate::to::to_dtos::to_add_dto::{ToAddManyDto, TextualObjectStoredReceipt};
 use crate::to::to_dtos::to_find_dto::{ToFindRequestDto, ToFindResultDto};
+use crate::to::to_dtos::to_scan_dto::{ToScanRequestDto, ToScanResultDto};
 use crate::to::to_struct::TextualObject;
 use crate::to_machine::to_machine_struct::ToMachine;
+use crate::to_parser::parser::ToParser;
+use crate::to_parser::parser_option::ToParserOption;
 use crate::to_ticket::to_ticket_struct::ToTicket;
 
 /// These are methods mostly exposed to the ToApi, such batch adding dtos etc--why it's called public operation methods
@@ -65,20 +68,8 @@ impl ToMachine {
                 return Err(e);
             }
         }
-        // use find method to get all tos
-        let mut found_tos: HashMap<String, TextualObject> = HashMap::new();
-        let mut missing_to_ids: Vec<String> = vec![];
-        for ticket_id in find_request_dto.ticket_ids.iter() {
-            let found_to = self.find(ticket_id).await;
-            match found_to {
-                Some(found_to) => {
-                    found_tos.insert(ticket_id.clone(), found_to);
-                }
-                None => {
-                    missing_to_ids.push(ticket_id.clone());
-                }
-            }
-        };
+        // find by ticket ids
+        let (found_tos, missing_to_ids) = self.find_by_ticket_ids(&find_request_dto.ticket_ids).await;
         let result = ToFindResultDto {
             found_tos_count: found_tos.len(),
             missing_tos_count: missing_to_ids.len(),
@@ -89,11 +80,55 @@ impl ToMachine {
         Ok(result)
     }
 
+    /// This is higher level than find_tos_by_ticket_ids, for it classify the results into found and missing
+    ///
+    async fn find_by_ticket_ids(&mut self, ticket_ids: &Vec<String>) -> (Vec<TextualObject>, Vec<String>) {
+// use find method to get all tos
+        let mut found_tos: Vec<TextualObject> = Vec::new();
+        let mut missing_to_ids: Vec<String> = vec![];
+        for ticket_id in ticket_ids.iter() {
+            let found_to = self.find(ticket_id).await;
+            match found_to {
+                Some(found_to) => {
+                    found_tos.push(found_to);
+                }
+                None => {
+                    missing_to_ids.push(ticket_id.clone());
+                }
+            }
+        };
+        (found_tos, missing_to_ids)
+    }
+
     // find TOs by text
-    // pub fn find_tos_by_text(&mut self, text: &String) -> Result<TextualObjectFindResultDto, TextualObjectErrors> {
-    //     // use find method to get all tos
-    //     let matched_to_tickets = TextualObjectTicket::parse(text);
-    // }
+    pub async fn find_tos_by_text(&mut self, scan_request: &ToScanRequestDto) -> Result<ToScanResultDto, ToErrors> {
+        let validation = scan_request.validate();
+        match validation {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+        // use find method to get all tos
+        let matched_to_tickets = ToParser::scan_text_for_tickets(&scan_request.text, ToParserOption::default());
+
+        let found_tos = self.find_by_ticket_ids(&matched_to_tickets.iter().map(
+            |ticket_id| ticket_id.ticket_id.to_string()
+        ).collect()).await;
+
+
+        let result = ToScanResultDto {
+            found_tos_count: found_tos.0.len(),
+            missing_tos_count: found_tos.1.len(),
+            found_tos: found_tos.0,
+            missing_tos_ids: found_tos.1,
+            store_url: self.store_url.clone(),
+            cleaned_text: scan_request.text.clone(),
+        };
+
+        Ok(result)
+
+    }
 
 }
 
@@ -298,5 +333,11 @@ mod test {
                 }
             }
         }
+    }
+
+    // Todo, write test for scan request
+    #[tokio::test]
+    async fn test_scan_request() {
+        
     }
 }

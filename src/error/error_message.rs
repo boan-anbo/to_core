@@ -10,5 +10,8 @@ pub enum ToErrorMessage {
     FindRequestDtoNoTicketIds,
 
     #[strum(serialize = "store_url does not exist")]
-    FindRequestDtoStoreUrlDoesNotExist
+    FindOrScanRequestDtoStoreUrlDoesNotExist,
+
+    #[strum(serialize = "No text is provided")]
+    ScanRequestDtoNoText,
 }
