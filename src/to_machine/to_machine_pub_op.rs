@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use crate::to::to_dto::{TextualObjectAddManyDto, TextualObjectFindRequestDto, TextualObjectFindResultDto, TextualObjectStoredReceipt};
+use crate::to::to_dtos::to_add_dto::{TextualObjectAddManyDto, TextualObjectStoredReceipt};
+use crate::to::to_dtos::to_find_dto::{TextualObjectFindRequestDto, TextualObjectFindResultDto};
 use crate::to::to_struct::TextualObject;
 use crate::to_machine::to_machine_struct::TextualObjectMachine;
 
@@ -19,9 +20,9 @@ impl TextualObjectMachine {
 
         // iterate over tos IndexMap
         // interate over tos IndexMap asynchronously
-        for (source_id, add_dto) in add_tos_dto.tos.iter() {
+        for to_to_add in add_tos_dto.tos.iter() {
             // convert
-            let mut to = TextualObject::from(add_dto.clone());
+            let mut to = TextualObject::from(to_to_add.clone());
 
             // generate tha assign ticket id to the TO to be added
             let unique_ticket_id = self.get_unique_ticket_id().await;
@@ -30,7 +31,7 @@ impl TextualObjectMachine {
             // save store info to to
             to.store_info = self.store_info.clone();
             to.store_url = self.store_url.clone();
-            to.source_id = source_id.clone();
+            to.source_id = String::from(&to_to_add.source_id.clone().unwrap_or("".to_string()));
             // insert to
             self.add_textual_object(&to).await;
             receipt.tos_stored.insert(unique_ticket_id, to);
@@ -76,7 +77,8 @@ impl TextualObjectMachine {
 mod test {
     use crate::db::db_op::join_db_path;
     use crate::enums::store_type::StoreType;
-    use crate::to::to_dto::{TextualObjectAddManyDto, TextualObjectFindRequestDto};
+    use crate::to::to_dtos::to_add_dto::TextualObjectAddManyDto;
+    use crate::to::to_dtos::to_find_dto::TextualObjectFindRequestDto;
     use crate::to::to_struct::TextualObject;
     use crate::to_machine::to_machine_option::ToMachineOption;
     use crate::to_machine::to_machine_struct::TextualObjectMachine;
@@ -183,8 +185,6 @@ mod test {
 
         // check result store url equals to machine store url
         assert_eq!(result_found_all.store_url, textual_object_machine.store_url);
-
-
 
     }
 }

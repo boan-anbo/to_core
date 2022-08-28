@@ -10,7 +10,8 @@ use sqlx::pool::PoolConnection;
 
 use crate::db::db_op::{connect_to_database, initialize_database, join_db_path};
 use crate::enums::store_type::StoreType;
-use crate::to::to_dto::{TextualObjectAddManyDto, TextualObjectFindRequestDto};
+use crate::to::to_dtos::to_add_dto::TextualObjectAddManyDto;
+use crate::to::to_dtos::to_find_dto::TextualObjectFindRequestDto;
 use crate::to_machine::to_machine_option::ToMachineOption;
 use crate::utils::id_generator::generate_id;
 use crate::utils::split_store_path::split_store_path;
